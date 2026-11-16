@@ -9835,13 +9835,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cheats imported. They take effect on the next launch."
+            "value": "Imported %@ cheat file(s). Select entries below, then restart the game and check the log."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "金手指已导入，下次启动生效。"
+            "value": "已导入 %@ 份金手指文件。请在下方选择条目，再重新启动游戏并查看日志。"
           }
         }
       }
@@ -9886,13 +9886,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "These cheat files are already installed: %@. Replace them with the imported ones?"
+            "value": "Replace these files: %@? Originals and selections are backed up in Documents/cheat-backups/. Entries with changed code are turned off until selected again."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "以下金手指文件已安装：%@。用导入的替换它们吗？"
+            "value": "替换以下文件：%@？原件及开关将备份到 Documents/cheat-backups/。代码已改变的条目会关闭，需要重新选择。"
           }
         }
       }
@@ -9920,13 +9920,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No cheat files yet. Import below, or place build-ID-named .txt files in Documents/cheats/."
+            "value": "Import Build-ID-named .txt files or an extracted Atmosphere folder. ZIP packs must be extracted first."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "还没有金手指。用下方按钮导入，或把以 build ID 命名的 .txt 文件放进 Documents/cheats/。"
+            "value": "可导入以 Build ID 命名的 .txt，或解压后的 Atmosphere 文件夹。ZIP 包请先解压。"
           }
         }
       }
@@ -9937,13 +9937,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cheat files sit in this game's data folder under Documents/cheats/, named by the game's build ID. On iOS, entries that patch game code are switched off by the engine automatically (the reason is written to the game log); entries that only write data do take effect. Changes apply on the next launch."
+            "value": "Files are stored in Documents/cheats/. Build ID and engine support must match. On iOS, signed game-code pages cannot be patched by this engine; data cheats can work if their addresses and conditions are correct. No code addresses or opcodes are rewritten. Changes require a game restart."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "金手指文件在这款游戏数据目录的 Documents/cheats/ 里，按游戏 build ID 命名。在 iOS 上，修改游戏代码的条目会被引擎自动关停（原因会写进游戏日志），只写数据的条目可以生效。改动下次启动生效。"
+            "value": "文件保存在 Documents/cheats/。须同时满足 Build ID 匹配及游戏内置引擎支持。在 iOS 上，此引擎无法修改签名游戏代码页；数据型金手指仍须地址与触发条件正确。导入不会改写地址或操作码；修改后须重新启动游戏。"
           }
         }
       }
@@ -9978,6 +9978,329 @@
           "stringUnit": {
             "state": "translated",
             "value": "金手指"
+          }
+        }
+      }
+    },
+    "lc.cheats.batchConflict": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skipped %@: different files in this batch use the same Build ID. Select the intended file separately."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已跳过 %@：本批次存在同 Build ID 的不同文件，请单独选择需要的那份。"
+          }
+        }
+      }
+    },
+    "lc.cheats.buildMatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matches an installed game program; effect unverified"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "与已安装游戏程序匹配；效果未验证"
+          }
+        }
+      }
+    },
+    "lc.cheats.buildMismatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Different Build ID: normally not loaded by this game version"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build ID 不匹配：当前游戏版本通常不会加载"
+          }
+        }
+      }
+    },
+    "lc.cheats.buildUnknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build ID unavailable in this IPA. Compatibility cannot be verified; match the game version yourself."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 IPA 没有可读取的 Build ID，暂时无法验证版本匹配，请核对游戏版本。"
+          }
+        }
+      }
+    },
+    "lc.cheats.currentBuild": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Game NSO Build ID: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "游戏 NSO Build ID：%@"
+          }
+        }
+      }
+    },
+    "lc.cheats.disabledNote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All cheats, including master entries, will be disabled on the next launch. Your selections are kept."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下次启动停用全部金手指（包括主码），保留原有选择。"
+          }
+        }
+      }
+    },
+    "lc.cheats.duplicateNote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate names use #2, #3… state keys. Older game IPAs may need a newer cheat engine to select duplicates independently."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同名条目使用 #2、#3… 保存独立开关；较旧游戏 IPA 可能需要更新内置引擎才能分别选择。"
+          }
+        }
+      }
+    },
+    "lc.cheats.enabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable cheats"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用金手指"
+          }
+        }
+      }
+    },
+    "lc.cheats.enabledNote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selections apply on the next launch. An enabled switch does not verify an effect in the game."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开关在下次启动时读取。已开启不代表已验证游戏内效果。"
+          }
+        }
+      }
+    },
+    "lc.cheats.errorChanged": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cheat file changed. Reload the page and try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "金手指文件已改变，请刷新页面后重试。"
+          }
+        }
+      }
+    },
+    "lc.cheats.errorContent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No readable cheat code. Use UTF-8 or UTF-16 with a BOM, headers and 8-digit hexadecimal words."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可读取的金手指代码。请使用 UTF-8 或带 BOM 的 UTF-16，内容须包含条目段头和 8 位十六进制代码字。"
+          }
+        }
+      }
+    },
+    "lc.cheats.errorDuplicate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multiple installed files share this Build ID. Keep one file before importing a replacement."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已安装多个同 Build ID 文件，请保留一份后再导入替换。"
+          }
+        }
+      }
+    },
+    "lc.cheats.errorName": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use a 16-digit hexadecimal Build ID followed by .txt."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件名须为 16 位十六进制 Build ID 加 .txt。"
+          }
+        }
+      }
+    },
+    "lc.cheats.errorSize": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import limit exceeded: 4 MB per file, 32 MB per batch, 10000 folder entries."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "超出导入上限：单文件 4 MB、每批 32 MB、文件夹 10000 个项目。"
+          }
+        }
+      }
+    },
+    "lc.cheats.folderEmpty": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching cheat files in “%@”. Atmosphere title folders must match this game."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」内没有匹配的金手指文件。Atmosphere 标题目录须与当前游戏一致。"
+          }
+        }
+      }
+    },
+    "lc.cheats.invalidLines": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Malformed code on lines %@; the engine may reject this entry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %@ 行代码格式异常，引擎可能拒绝此条目。"
+          }
+        }
+      }
+    },
+    "lc.cheats.lastRun": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous run log (may predate changes)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上次运行日志（可能早于本次修改）"
+          }
+        }
+      }
+    },
+    "lc.cheats.limitNote": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file exceeds the current upstream engine limit (256 headers or 8192 words per entry). Some code may be skipped; game IPAs can have lower limits."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此文件超过当前上游引擎限制（256 个段头或单条 8192 个代码字），部分代码可能被跳过；旧游戏 IPA 的限制可能更低。"
+          }
+        }
+      }
+    },
+    "lc.cheats.viewLog": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View full game log"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看完整游戏日志"
           }
         }
       }

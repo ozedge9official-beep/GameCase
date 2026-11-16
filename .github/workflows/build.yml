@@ -30,6 +30,7 @@ jobs:
         run: |
           python3 -m unittest discover -s tests -v
           python3 tests/run_swift_regressions.py
+          python3 tests/run_cheat_regressions.py
 
   build:
     name: Build using xcodebuild command
