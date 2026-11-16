@@ -1,4 +1,5 @@
 // Appended to storage_regressions.swift, with the same temporary root.
+import Darwin
 var reliabilityChecks = 0
 func verify(_ condition: @autoclosure () throws -> Bool, _ reason: String) rethrows {
     let result = try condition()
@@ -63,23 +64,24 @@ verify(snapshot.directories.contains("empty"), "empty directories preserved")
 try fm.createSymbolicLink(at: tree.appendingPathComponent("external"), withDestinationURL: tracked)
 expectFailure("symlink must not silently become a partial backup") { _ = try LCFileTree.scan(tree) }
 try fm.removeItem(at: tree.appendingPathComponent("external"))
-final class BrokenEnumeration: FileManager {
-    override func enumerator(at url: URL, includingPropertiesForKeys keys: [URLResourceKey]?,
-                             options mask: FileManager.DirectoryEnumerationOptions = [],
-                             errorHandler handler: ((URL, Error) -> Bool)? = nil) -> FileManager.DirectoryEnumerator? {
-        _ = handler?(url, CocoaError(.fileReadNoPermission))
-        return super.enumerator(at: url, includingPropertiesForKeys: keys, options: mask, errorHandler: handler)
-    }
-}
-expectFailure("directory read failures propagate") { _ = try LCFileTree.scan(tree, fileManager: BrokenEnumeration()) }
 let backupDocuments = root.appendingPathComponent("backup-documents")
 let backup = try await LCSaveDataStore.makeBackup(of: tree, in: backupDocuments, fm: fm)!
 try verify(text(backup.appendingPathComponent("nested/one")) == "one", "actual save backup copies complete file")
 verify(fm.fileExists(atPath: backup.appendingPathComponent("empty").path), "actual save backup keeps empty folders")
-do {
-    _ = try await LCSaveDataStore.makeBackup(of: tree, in: backupDocuments, fm: BrokenEnumeration())
-    preconditionFailure("incomplete scan must prevent backup completion")
-} catch { reliabilityChecks += 1 }
+// Exercise real directory-enumeration errors on the unprivileged macOS runner.
+// Restore permissions even if the attempted backup reports an error.
+if geteuid() != 0 {
+    let blocked = root.appendingPathComponent("blocked-tree")
+    let protected = blocked.appendingPathComponent("unreadable")
+    try file(protected.appendingPathComponent("important-save"), "must not be omitted")
+    try fm.setAttributes([.posixPermissions: 0], ofItemAtPath: protected.path)
+    defer { try? fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: protected.path) }
+    expectFailure("directory read failures propagate") { _ = try LCFileTree.scan(blocked) }
+    do {
+        _ = try await LCSaveDataStore.makeBackup(of: blocked, in: backupDocuments, fm: fm)
+        preconditionFailure("incomplete scan must prevent backup completion")
+    } catch { reliabilityChecks += 1 }
+}
 let backupNames = try fm.contentsOfDirectory(atPath: backupDocuments.appendingPathComponent("save-backups").path)
 verify(backupNames.count == 1 && !backupNames.contains(where: { $0.hasPrefix(".pending-") }), "only successful backup receives final name")
 let gameSave = containers[0].containerURL.appendingPathComponent("Documents/save")
@@ -171,7 +173,7 @@ let cover = root.appendingPathComponent("cover")
 try file(cover, "image one")
 var imageLoads = 0
 func cachedValue() -> NSString? {
-    cache.value(at: cover, load: { url in imageLoads += 1; return (try? String(contentsOf: url)) as NSString? }, cost: { $0.length })
+    cache.value(at: cover, load: { url in imageLoads += 1; return (try? String(contentsOf: url, encoding: .utf8)) as NSString? }, cost: { $0.length })
 }
 for _ in 0..<500 { precondition(cachedValue() == "image one", "same version returns cached value") }
 verify(imageLoads == 1, "500 requests perform only one value load")
