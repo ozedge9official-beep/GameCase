@@ -9886,13 +9886,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Replace these files: %@? Originals and selections are backed up in Documents/cheat-backups/. Entries with changed code are turned off until selected again."
+            "value": "Replace these files: %@? Originals and selections are backed up in Documents/cheat-backups/. Ordinary entries with changed code are turned off until selected again. Master entries follow the global switch."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "替换以下文件：%@？原件及开关将备份到 Documents/cheat-backups/。代码已改变的条目会关闭，需要重新选择。"
+            "value": "替换以下文件：%@？原件及开关将备份到 Documents/cheat-backups/。代码已改变的普通条目会关闭，需要重新选择；主码跟随总开关。"
           }
         }
       }

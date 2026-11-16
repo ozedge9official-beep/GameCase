@@ -336,7 +336,11 @@ enum LCGameCheats {
 
     static func delete(file: CheatFile, _ fm: FileManager = .default) throws {
         try fm.removeItem(at: file.fileURL)
-        if fm.fileExists(atPath: file.enabledURL.path) { try fm.removeItem(at: file.enabledURL) }
+        let remaining = (try fm.contentsOfDirectory(atPath: file.fileURL.deletingLastPathComponent().path))
+            .contains { isCheatFileName($0) && normalizedFileName($0) == file.buildID + ".txt" }
+        // Case variants share the engine's uppercase state path. Removing one
+        // duplicate must not reset the surviving file's choices.
+        if !remaining && fm.fileExists(atPath: file.enabledURL.path) { try fm.removeItem(at: file.enabledURL) }
     }
 
     /// NSO Build ID, not a Mach-O UUID, title ID or iOS app version.

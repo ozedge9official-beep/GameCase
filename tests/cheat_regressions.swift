@@ -132,4 +132,17 @@ fails("state commit failure rolls back text too") {
     try LCGameCheats.importCheatFile(fileName: bid + ".txt", data: Data(base.utf8), into: cheats, FailingCheatMove())
 }
 try check(read(snapshot.fileURL) == beforeText && read(snapshot.enabledURL) == beforeState, "two-file transaction preserves originals on failure")
+let mixed = root.appendingPathComponent("case-sensitive-cheats")
+try write(mixed.appendingPathComponent(bid.lowercased() + ".txt"), base)
+try write(mixed.appendingPathComponent(bid + ".enabled"), "HP\n")
+let lowercaseFile = LCGameCheats.installedFiles(in: mixed)[0]
+check(lowercaseFile.isOn(lowercaseFile.entries[0]), "lowercase text uses uppercase engine state path")
+try write(mixed.appendingPathComponent(bid + ".TXT"), changed)
+if try fm.contentsOfDirectory(atPath: mixed.path).filter({ LCGameCheats.isCheatFileName($0) }).count == 2 {
+    fails("ambiguous installed builds cannot be overwritten arbitrarily") {
+        try LCGameCheats.importCheatFile(fileName: bid + ".txt", data: Data(base.utf8), into: mixed)
+    }
+    try LCGameCheats.delete(file: lowercaseFile)
+    check(LCGameCheats.readEnabledNames(enabledURL: lowercaseFile.enabledURL) == ["HP"], "deleting one case variant preserves shared state")
+}
 print("Cheat regressions passed: \(checks) checks")

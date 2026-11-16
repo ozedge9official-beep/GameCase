@@ -249,6 +249,9 @@ struct LCGameCheatsSectionView: View {
                 .buttonStyle(.plain)
             }
             if expanded {
+                if files.filter({ $0.buildID == file.buildID }).count > 1 {
+                    Text("lc.cheats.errorDuplicate".loc).font(.footnote).foregroundColor(.orange)
+                }
                 if file.headerCount > 256 || file.entries.contains(where: { $0.words.count > 8192 }) {
                     Text("lc.cheats.limitNote".loc).font(.footnote).foregroundColor(.orange)
                 }

@@ -35,8 +35,8 @@ first. Imports manage `.txt` files; external `.enabled`, `.values`, and compiled
 Different files with the same Build ID in a single batch are skipped rather
 than arbitrarily choosing one. Replacing a file first copies its original text
 and selections to `Documents/cheat-backups/<UUID>/`, then commits text and state
-together. Unchanged entries retain selections; changed code requires selecting
-the entry again. Unknown guest keys are retained. Backups are local files and
+together. Unchanged entries retain selections; changed ordinary code requires selecting
+the entry again. Master entries still follow the global switch. Unknown guest keys are retained. Backups are local files and
 are not automatically pruned.
 
 The global off switch creates a regular marker file and points `DM_CHEATS` at
