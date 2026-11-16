@@ -33807,6 +33807,23 @@
           }
         }
       }
+    },
+    "lc.cheats.masterDisabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disabled globally"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "总开关已停用"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

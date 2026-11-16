@@ -255,7 +255,7 @@ struct LCGameCheatsSectionView: View {
                 if file.entries.isEmpty {
                     Text("lc.cheats.errorContent".loc).font(.footnote).foregroundColor(.orange)
                 }
-                if Set(file.entries.map(\.name)).count != file.entries.count {
+                if Set(file.entries.map { $0.name.lowercased() }).count != file.entries.count {
                     Text("lc.cheats.duplicateNote".loc).font(.footnote).foregroundColor(.secondary)
                 }
                 VStack(alignment: .leading, spacing: 0) {
@@ -288,7 +288,7 @@ struct LCGameCheatsSectionView: View {
             }
             Spacer(minLength: 8)
             if entry.isMaster {
-                Text("lc.cheats.alwaysOn".loc)
+                Text(enabled ? "lc.cheats.alwaysOn".loc : "lc.cheats.masterDisabled".loc)
                     .font(.system(size: 12.5, weight: .semibold))
                     .foregroundColor(.primary.opacity(0.4))
             } else {
@@ -317,6 +317,10 @@ struct LCGameCheatsSectionView: View {
             enabled = LCGameCheats.isEnabled(in: context.cheatsDir.deletingLastPathComponent())
             if let path = app.appInfo.bundlePath() { buildIDs = LCGameCheats.buildIDs(in: URL(fileURLWithPath: path)) }
             else { buildIDs = [] }
+            files.sort {
+                let a = buildIDs.contains($0.buildID), b = buildIDs.contains($1.buildID)
+                return a == b ? $0.buildID < $1.buildID : a
+            }
             let log = context.cheatsDir.deletingLastPathComponent().appendingPathComponent("log.txt")
             if let tail = LCGameLogReader.readTail(of: log) {
                 let lines = tail.text.components(separatedBy: .newlines).filter {
@@ -338,12 +342,15 @@ struct LCGameCheatsSectionView: View {
         } else if let expandedBuildID, !files.contains(where: { $0.buildID == expandedBuildID }) {
             self.expandedBuildID = nil
         }
+        if expandedBuildID == nil, let matching = files.first(where: { buildIDs.contains($0.buildID) }) {
+            expandedBuildID = matching.buildID
+        }
     }
 
     private func runToggle(file: LCGameCheats.CheatFile, entry: LCGameCheats.CheatEntry, on: Bool) {
         do {
-            try LCGameCheats.setEntry(entry, on: on, file: file)
-            reload()
+            let updated = try LCGameCheats.setEntry(entry, on: on, file: file)
+            if let index = files.firstIndex(where: { $0.id == file.id }) { files[index] = updated }
         } catch {
             reload()
             resultTitle = "lc.cheats.section".loc

@@ -4,7 +4,7 @@ GameCase manages files and launch settings. Each game IPA contains its own
 nxnative cheat VM; updating GameCase does not update that VM.
 
 The format contract was checked against upstream
-[`hle_cheats.c`](https://github.com/seedds/nxnative/blob/main/dm/host/hle_cheats.c)
+[`hle_cheats.c`](https://github.com/seedds/nxnative/blob/60284e7901cb4acd0e057d99fdf5560e0cd8e2fe/dm/host/hle_cheats.c)
 (blob `41ddc08f31af639d7802143b99f24e72aa579cb5`; source-file identity, not a game IPA engine version). In particular, the current VM:
 
 - Matches the first 16 hexadecimal digits of the main **NSO** Build ID against

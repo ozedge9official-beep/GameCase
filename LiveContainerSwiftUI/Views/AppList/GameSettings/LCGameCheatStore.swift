@@ -263,9 +263,11 @@ enum LCGameCheats {
         return names.contains(where: isCheatFileName) ? envValue : nil
     }
 
-    static func setEntry(_ entry: CheatEntry, on: Bool, file: CheatFile, _ fm: FileManager = .default) throws {
-        guard !entry.isMaster else { return }
-        let current = parseEntries(text: try decode(readData(at: file.fileURL)))
+    @discardableResult
+    static func setEntry(_ entry: CheatEntry, on: Bool, file: CheatFile, _ fm: FileManager = .default) throws -> CheatFile {
+        guard !entry.isMaster else { return file }
+        let parsed = parse(text: try decode(readData(at: file.fileURL)))
+        let current = parsed.entries
         guard current.contains(where: { $0.key == entry.key && $0.words == entry.words && $0.ordinal == entry.ordinal }) else {
             throw LCGameCheatError.staleFile
         }
@@ -278,6 +280,8 @@ enum LCGameCheats {
         let lines = current.filter { !$0.isMaster && keys.contains($0.key) }.map(\.key) + previous.filter { !known.contains($0) }
         try (lines.isEmpty ? "" : lines.joined(separator: "\n") + "\n")
             .write(to: file.enabledURL, atomically: true, encoding: .utf8)
+        return CheatFile(buildID: file.buildID, fileURL: file.fileURL, entries: current,
+                         enabledNames: resolvedKeys(entries: current, lines: lines), headerCount: parsed.headerCount)
     }
 
     @discardableResult
