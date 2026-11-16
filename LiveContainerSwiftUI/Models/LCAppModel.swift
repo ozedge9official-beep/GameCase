@@ -385,6 +385,7 @@ class LCAppModel: ObservableObject, Hashable {
         // 要么本局已在计、要么由接手副本在它自己的漏斗打戳），启动派发只剩
         // 下方 JIT / 经典模式两条路，只在这里打一次不会重复计。
 
+        LCCoverImageCache.removeAll()
         LCPlayStats.beginSession(bundleId: bundleIdOverride ?? bundleIdentifier)
 
         var jitNeeded = appInfo.isJITNeeded || appInfo.is32bit

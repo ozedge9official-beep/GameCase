@@ -265,23 +265,29 @@ enum LCGameMods {
         }
         try fm.createDirectory(at: staging, withIntermediateDirectories: true)
         do {
-            let files = LCDatapackImportView.treeFiles(source)
-            let total = LCDatapackImportView.treeSize(source)
+            let snapshot = try LCFileTree.scan(source)
+            let files = snapshot.files
+            let total = snapshot.totalBytes
+            for directory in snapshot.directories {
+                try fm.createDirectory(at: staging.appendingPathComponent(directory), withIntermediateDirectories: true)
+            }
+            var progressGate = LCProgressGate()
             await onProgress(0, total)
             var copied: Int64 = 0
             for file in files {
-                let relative = LCDatapackImportView.relativePath(of: file, under: source)
+                let relative = file.relativePath
                 let dest = staging.appendingPathComponent(relative)
                 try fm.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
                 let base = copied
-                let written = try await LCDatapackImportView.chunkedCopyFile(from: file, to: dest, isCancelled: isCancelled) { done in
-                    await onProgress(base + done, total)
+                let written = try await LCDatapackImportView.chunkedCopyFile(from: file.url, to: dest, isCancelled: isCancelled) { done in
+                    if progressGate.shouldReport() { await onProgress(base + done, total) }
                 }
-                guard written == LCDatapackImportView.fileSize(file) else {
+                guard written == file.size && written == LCDatapackImportView.fileSize(file.url) else {
                     throw CocoaError(.fileWriteUnknown)
                 }
                 copied += written
             }
+            await onProgress(copied, total)
             // 提交：旧夹先挪开（可回滚），新夹就位后删旧夹
             let replaced = mods.appendingPathComponent(replacedPrefix + UUID().uuidString, isDirectory: true)
             var movedAside: [URL] = []
@@ -294,10 +300,7 @@ enum LCGameMods {
                 }
                 try fm.moveItem(at: staging, to: mods.appendingPathComponent(name))
             } catch {
-                for aside in movedAside {
-                    try? fm.moveItem(at: aside, to: mods.appendingPathComponent(aside.lastPathComponent))
-                }
-                try? fm.removeItem(at: replaced)
+                try LCFileReplacement.restoreMovedItems(movedAside, to: mods, recoveryDirectory: replaced, cause: error)
                 throw error
             }
             try? fm.removeItem(at: replaced)
@@ -392,6 +395,8 @@ enum LCGameMods {
     /// 按首个「=」切分、键再去空白比对；注释行永远不算、原样保留。
     static func maintainEnvLine(envFile: URL, key: String, value: String?) {
         let fm = FileManager.default
+        do { try LCRecoverableFileWriter.recoverIfNeeded(at: envFile) }
+        catch { return }
         let exists = fm.fileExists(atPath: envFile.path)
         guard exists || value != nil else { return }
         var original = ""
@@ -444,15 +449,7 @@ enum LCGameMods {
         let result = out.map { $0.content + $0.ending }.joined()
         guard result != original else { return }
         do {
-            // 原地截断重写、不换文件，与 LCGamePrefs.save 同理（跟踪方看同一文件）
-            if exists, let handle = try? FileHandle(forWritingTo: envFile) {
-                try handle.truncate(atOffset: 0)
-                try handle.write(contentsOf: Data(result.utf8))
-                try handle.synchronize()
-                try? handle.close()
-            } else {
-                try Data(result.utf8).write(to: envFile)
-            }
+            try LCRecoverableFileWriter.write(Data(result.utf8), to: envFile)
         } catch {
             // 维护失败不挡启动，下次启动再试
         }

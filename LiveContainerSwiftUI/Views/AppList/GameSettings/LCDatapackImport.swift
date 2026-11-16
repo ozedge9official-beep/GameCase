@@ -99,13 +99,7 @@ private struct LCDatapackPickerHeightModifier: ViewModifier {
     }
 }
 
-/// 拷贝分块大小（放文件级常量：拷贝在后台线程跑，不能读主 actor 隔离的静态成员）
-private let lcDatapackChunkSize = 4 * 1024 * 1024
-
-/// 分块拷贝被取消（与真实 IO 失败分开报：取消回待选状态、不算导入失败）
-enum LCDatapackCopyError: Error {
-    case cancelled
-}
+typealias LCDatapackCopyError = LCFileCopyError
 
 struct LCDatapackImportView: View {
     let request: LCDatapackRequest
@@ -494,32 +488,7 @@ struct LCDatapackImportView: View {
     /// 每块 4MB，块前查取消，写完同步落盘，返回写入字节数。本函数只负责把
     /// 字节完整写到 dest（先清同名残留），大小校验与替换由调用方做。
     nonisolated static func chunkedCopyFile(from source: URL, to dest: URL, isCancelled: () -> Bool, onProgress: (Int64) async -> Void) async throws -> Int64 {
-        let fm = FileManager.default
-        if fm.fileExists(atPath: dest.path) {
-            try fm.removeItem(at: dest)
-        }
-        guard fm.createFile(atPath: dest.path, contents: nil) else {
-            throw CocoaError(.fileWriteUnknown)
-        }
-        let reader = try FileHandle(forReadingFrom: source)
-        let writer = try FileHandle(forWritingTo: dest)
-        defer {
-            try? reader.close()
-            try? writer.close()
-        }
-        var written: Int64 = 0
-        while true {
-            if isCancelled() {
-                throw LCDatapackCopyError.cancelled
-            }
-            let chunk = try reader.read(upToCount: lcDatapackChunkSize) ?? Data()
-            if chunk.isEmpty { break }
-            try writer.write(contentsOf: chunk)
-            written += Int64(chunk.count)
-            await onProgress(written)
-        }
-        try writer.synchronize()
-        return written
+        try await LCFileCopy.copy(from: source, to: dest, isCancelled: isCancelled, onProgress: onProgress)
     }
 
     // MARK: 文件夹数据包导入
@@ -683,9 +652,11 @@ struct LCDatapackImportView: View {
                 }
                 try fm.createDirectory(at: staging, withIntermediateDirectories: true)
 
+                let aocSnapshot = try plan.aocDirectory.map { try LCFileTree.scan($0) }
+                var progressGate = LCProgressGate()
                 var totalAcc: Int64 = 0
                 if let romfs = plan.romfs { totalAcc += Self.fileSize(romfs) }
-                if let aoc = plan.aocDirectory { totalAcc += Self.treeSize(aoc) }
+                totalAcc += aocSnapshot?.totalBytes ?? 0
                 for file in plan.extraFiles { totalAcc += Self.fileSize(file) }
                 guard totalAcc > 0 else {
                     throw CocoaError(.fileNoSuchFile)
@@ -695,17 +666,18 @@ struct LCDatapackImportView: View {
                 await MainActor.run { totalBytes = total }
 
                 var base: Int64 = 0
-                func copyOne(_ source: URL, to dest: URL) async throws {
+                func copyOne(_ source: URL, to dest: URL, expectedBytes: Int64? = nil) async throws {
                     try fm.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
                     let start = base
                     let written = try await Self.chunkedCopyFile(from: source, to: dest, isCancelled: { box.cancelled }) { done in
                         let acc = start + done
+                        guard progressGate.shouldReport() else { return }
                         await MainActor.run {
                             copiedBytes = acc
                             if total > 0 { progress = Double(acc) / Double(total) }
                         }
                     }
-                    guard written == Self.fileSize(source) else {
+                    guard written == Self.fileSize(source), expectedBytes.map({ $0 == written }) ?? true else {
                         throw CocoaError(.fileWriteUnknown)
                     }
                     base += written
@@ -714,10 +686,12 @@ struct LCDatapackImportView: View {
                 if let romfs = plan.romfs {
                     try await copyOne(romfs, to: staging.appendingPathComponent("romfs.img"))
                 }
-                if let aoc = plan.aocDirectory {
-                    for file in Self.treeFiles(aoc) {
-                        let relative = Self.relativePath(of: file, under: aoc)
-                        try await copyOne(file, to: staging.appendingPathComponent("aoc").appendingPathComponent(relative))
+                if let snapshot = aocSnapshot {
+                    for directory in snapshot.directories {
+                        try fm.createDirectory(at: staging.appendingPathComponent("aoc").appendingPathComponent(directory), withIntermediateDirectories: true)
+                    }
+                    for file in snapshot.files {
+                        try await copyOne(file.url, to: staging.appendingPathComponent("aoc").appendingPathComponent(file.relativePath), expectedBytes: file.size)
                     }
                 }
                 for file in plan.extraFiles {

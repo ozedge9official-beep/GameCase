@@ -207,6 +207,8 @@ final class LCGamePrefs {
     }
 
     func reload() {
+        do { try LCRecoverableFileWriter.recoverIfNeeded(at: prefsURL) }
+        catch { loadFailed = true; return }
         guard let data = try? Data(contentsOf: prefsURL) else {
             // 文件还不存在（客体没跑过）：空档案是正常起点
             values = [:]
@@ -232,26 +234,14 @@ final class LCGamePrefs {
                 at: prefsURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             let data = try PropertyListSerialization.data(
                 fromPropertyList: values, format: format, options: 0)
-            // 原地写（同一文件截断重写），不要 .atomic 的改名替换：客体启动器经
-            // UserDefaults/CFPreferences 读这份 plist，偏好系统按文件跟踪域内容，
-            // 换文件会让它继续按旧内容生效；而客体每次启动时 LauncherModel.apply()
-            // 又会拿它读到的值回写整个域——库内改动就是这样被「改回去」的，
-            // 读通写不通。原地写保证跟踪方看到的是同一文件的原地变更；写后再
-            // 读回逐键校验，不一致就重写一次，落盘内容必须与内存一致才算成功。
-            for _ in 0..<2 {
-                if FileManager.default.fileExists(atPath: prefsURL.path) {
-                    let handle = try FileHandle(forWritingTo: prefsURL)
-                    try handle.truncate(atOffset: 0)
-                    try handle.write(contentsOf: data)
-                    try handle.synchronize()
-                    try? handle.close()
-                } else {
-                    try data.write(to: prefsURL)
-                }
-                if diskMatchesValues() { return true }
-            }
+            // Keep CFPreferences' inode tracking and retain recovery bytes
+            // until the complete write has synchronized and verified.
+            try LCRecoverableFileWriter.write(data, to: prefsURL)
+            if diskMatchesValues() { return true }
+            reload()
             return false
         } catch {
+            reload()
             return false
         }
     }

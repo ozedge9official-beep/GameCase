@@ -72,7 +72,7 @@ enum LCFetchedCoverStore {
         guard FileManager.default.fileExists(atPath: url.path) else {
             return nil
         }
-        return UIImage(contentsOfFile: url.path)
+        return LCCoverImageCache.image(at: url)
     }
 
     static func save(_ image: UIImage, forBundleIdentifier bundleIdentifier: String) throws {
@@ -85,13 +85,12 @@ enum LCFetchedCoverStore {
         let target = fileURL(forBundleIdentifier: bundleIdentifier)
         let tmp = directoryURL.appendingPathComponent(".\(bundleIdentifier).tmp.jpg")
         try data.write(to: tmp, options: .atomic)
-        if fm.fileExists(atPath: target.path) {
-            try fm.removeItem(at: target)
-        }
-        try fm.moveItem(at: tmp, to: target)
+        try LCFileReplacement.replaceFile(at: target, with: tmp)
+        LCCoverImageCache.removeAll()
     }
 
     static func remove(forBundleIdentifier bundleIdentifier: String) {
+        LCCoverImageCache.removeAll()
         try? FileManager.default.removeItem(at: fileURL(forBundleIdentifier: bundleIdentifier))
     }
 
