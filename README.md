@@ -92,7 +92,7 @@ GameCase 站在以下开源工作之上，特此致谢：
 ## 链接
 
 - 本项目：[ozedge9official-beep/GameCase](https://github.com/ozedge9official-beep/GameCase)
-- 下载（nightly）：[Releases](https://github.com/ozedge9official-beep/GameCase/releases)
+- 下载：[Releases](https://github.com/ozedge9official-beep/GameCase/releases)
 - 上游底座：[LiveContainer/LiveContainer](https://github.com/LiveContainer/LiveContainer)
 - 上游原 README（归档）：[docs/livecontainer-readme.md](docs/livecontainer-readme.md)
 - 许可证：[LICENSE](LICENSE)
