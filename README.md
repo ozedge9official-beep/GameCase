@@ -79,15 +79,25 @@ GameCase 是一个专为 iOS 移植游戏设计的侧载游戏容器。它基于
 
 GameCase 站在以下开源工作之上，特此致谢：
 
-- **[LiveContainer](https://github.com/LiveContainer/LiveContainer)** —— 本项目的底座（在容器内免安装运行 iOS 应用的启动器）。原作者 **Duy Tran（[khanhduytran0](https://github.com/khanhduytran0)）**，主要维护者 **[hugeBlack](https://github.com/hugeBlack)**，以及 LiveContainer 组织与众多贡献者。本项目完整继承其代码与 git 历史，并沿用同一许可证 **GNU AGPL v3.0**（见仓库根目录 `LICENSE`）。上游原 README 全文保留于 [docs/livecontainer-readme.md](docs/livecontainer-readme.md)。
+本仓库的 GitHub fork 来源链为 [Joshliew33/GameCase](https://github.com/Joshliew33/GameCase) → [Tiaoge-tou/GameCase](https://github.com/Tiaoge-tou/GameCase)。本分叉的修改与发布由 ozedge9official-beep/GameCase 维护，不代表原作者的官方发行。
+
+- **[LiveContainer](https://github.com/LiveContainer/LiveContainer)** —— 本项目的底座（在容器内免安装运行 iOS 应用的启动器）。原作者 **Duy Tran（[khanhduytran0](https://github.com/khanhduytran0)）**，主要维护者 **[hugeBlack](https://github.com/hugeBlack)**，以及 LiveContainer 组织与众多贡献者。本项目继承上游代码，保留原有版权与许可声明，并沿用同一主许可证 **GNU AGPL v3.0**（见仓库根目录 `LICENSE`）。上游原 README 全文保留于 [docs/livecontainer-readme.md](docs/livecontainer-readme.md)。
 - **[nxnative](https://github.com/seedds/nxnative)**（作者 **[seedds](https://github.com/seedds)**）—— 客体游戏移植的工具链与生态来源：GameCase 中运行的移植游戏 IPA 由 nxnative 产出（NSO 重写、Horizon HLE、NVN→Metal）。
 - **[NX2Apple](https://github.com/LNPANDY/NX2Apple)**（作者 **[LNPANDY](https://github.com/LNPANDY)**）—— 设计参考来源：游戏库界面的效仿对象、其壳的手柄设置页（Controllers）被移植进 GameCase，其一壳多游戏的思路亦为本项目的参照。
 
+## 许可证与分发资料
+
+项目整体按仓库根目录的 [GNU AGPL v3](LICENSE) 发布。第三方部分保留各自适用的版权与许可，完整文本和来源见 [第三方通知索引](THIRD_PARTY_NOTICES.md)。保留致谢链接不能替代保留完整的许可、版权及必要的 NOTICE。
+
+分发修改版时，应保留原有通知，显著说明修改及相关日期，并提供与所分发安装包相对应、可获得的源码及必要构建资料。发布页应直接指向相应 tag/commit，而非仅链接随时变化的 main。GitHub 自动源码 ZIP 不会展开子模块，不能仅凭其存在就认定完整对应源码已齐备。
+
+本分叉 v1.0.16–v1.0.19 的改动见 [版本记录](docs/releases/)；许可资料核对日期为 2026-11-17。当前已确认的通知缺口、代码来源待核实项和图片授权问题见 [审查记录](docs/license-review.md)，发布说明补充稿见 [发布模板](docs/release-license-template.md)。本段不是“已全部合规”的保证，下一次二进制分发仍需补齐随包许可资料并处理待核实项。
+
 ## 声明
 
-- GameCase 本身**不包含任何游戏内容**。游戏 IPA 与数据包（romfs.img）需由用户自备，并请确保来源合法。
+- GameCase 不提供游戏程序、ROM、游戏数据包或解密密钥。游戏 IPA 与数据包（romfs.img）需由用户自行提供，并确保有权使用。仓库中的游戏封面及截图另有权利问题，代码许可证不自动授予这些素材的复制和再分发权。
 - 相关游戏的版权归各原厂所有，本项目与上述原作者、团队及游戏厂商均无隶属关系。
-- 本项目按 GNU AGPL v3.0 发布；若你分发修改版，请同样以 AGPL-3.0 开源并保留上述归属。
+- 本项目按 GNU AGPL v3.0 发布；分发修改版应履行相应源码、归属与许可通知义务，并保留第三方部分各自适用的条件。软件按适用许可证中的无担保条款提供。
 
 ## 链接
 
