@@ -27,6 +27,11 @@ extension LCContainer {
 }
 extension LCAppModel { var displayName: String { bundleIdentifier } }
 enum LCUtils { static func zipData(forDirectory url: URL) -> Data? { nil } }
+// ZIP extraction is covered by the portable libarchive tests. These tests
+// exercise single-file/folder save imports and backup logic without UIKit.
+func extract(_ source: String, _ destination: String, _ progress: Progress) -> Int32 {
+    fatalError("Unexpected ZIP path in Foundation save regressions")
+}
 enum LCGameLibraryInfo {
     static func defaultContainer(for app: LCAppModel) -> LCContainer? { app.appInfo.containers.first }
 }
