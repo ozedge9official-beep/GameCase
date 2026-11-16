@@ -65,7 +65,7 @@ GameCase 是一个专为 iOS 移植游戏设计的侧载游戏容器。它基于
 
 GameCase 站在以下开源工作之上，特此致谢：
 
-本仓库的 GitHub fork 来源链为 [Joshliew33/GameCase](https://github.com/Joshliew33/GameCase) → [Tiaoge-tou/GameCase](https://github.com/Tiaoge-tou/GameCase)。本分叉的修改与发布由 ozedge9official-beep/GameCase 维护，不代表原作者的官方发行。
+本仓库的 GitHub fork 来源链为 [Tiaoge-tou/GameCase](https://github.com/Tiaoge-tou/GameCase)。本分叉的修改与发布由 ozedge9official-beep/GameCase 维护，不代表原作者的官方发行。
 
 - **[LiveContainer](https://github.com/LiveContainer/LiveContainer)** —— 本项目的底座（在容器内免安装运行 iOS 应用的启动器）。原作者 **Duy Tran（[khanhduytran0](https://github.com/khanhduytran0)）**，主要维护者 **[hugeBlack](https://github.com/hugeBlack)**，以及 LiveContainer 组织与众多贡献者。本项目继承上游代码，保留原有版权与许可声明，并沿用同一主许可证 **GNU AGPL v3.0**（见仓库根目录 `LICENSE`）。上游原 README 全文保留于 [docs/livecontainer-readme.md](docs/livecontainer-readme.md)。
 - **[nxnative](https://github.com/seedds/nxnative)**（作者 **[seedds](https://github.com/seedds)**）—— 客体游戏移植的工具链与生态来源：GameCase 中运行的移植游戏 IPA 由 nxnative 产出（NSO 重写、Horizon HLE、NVN→Metal）。
