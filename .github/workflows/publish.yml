@@ -75,8 +75,23 @@ jobs:
           PY
       - name: Prepare complete draft release
         run: |
-          gh release create "$TAG" GameCase.ipa SHA256SUMS --target "$TARGET_SHA" --title "GameCase ${TAG#v}" --notes-file "docs/releases/$TAG.md" --draft
-          gh api "repos/$GITHUB_REPOSITORY/releases" > releases.json
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh api "repos/$GITHUB_REPOSITORY/releases" > releases.json
+            python3 - <<'PYCODE'
+          import hashlib, json, os
+          from pathlib import Path
+          release = next(r for r in json.loads(Path('releases.json').read_text()) if r['tag_name'] == os.environ['TAG'])
+          assert release['target_commitish'] == os.environ['TARGET_SHA'], 'Existing release targets different source'
+          for name in ['GameCase.ipa', 'SHA256SUMS']:
+              asset = next(a for a in release['assets'] if a['name'] == name)
+              digest = 'sha256:' + hashlib.sha256(Path(name).read_bytes()).hexdigest()
+              assert asset.get('digest') == digest, 'Existing asset differs: ' + name
+          print('Existing release binary and checksum match; updating source only')
+          PYCODE
+          else
+            gh release create "$TAG" GameCase.ipa SHA256SUMS --target "$TARGET_SHA" --title "GameCase ${TAG#v}" --notes-file "docs/releases/$TAG.md" --draft
+            gh api "repos/$GITHUB_REPOSITORY/releases" > releases.json
+          fi
       - name: Generate source from the uploaded IPA
         run: |
           python3 - <<'PY'
@@ -93,6 +108,10 @@ jobs:
           data = source.build_source(seed, os.environ['GITHUB_REPOSITORY'], release, os.environ['TAG'][1:])
           source.write_source(Path('.github/apps.json'), data)
           PY
-          gh release upload "$TAG" .github/apps.json
+          for attempt in 1 2 3; do
+            if gh release upload "$TAG" .github/apps.json --clobber; then break; fi
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep 3
+          done
       - name: Publish stable release
         run: gh release edit "$TAG" --draft=false --latest

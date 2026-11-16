@@ -28,6 +28,13 @@ class ReleaseSourceTests(unittest.TestCase):
         self.assertEqual(data["apps"][0]["versions"][0]["size"], 42)
         self.assertEqual(data["apps"][0]["version"], "2.3.4")
 
+    def test_draft_asset_url_is_replaced_with_the_stable_tag(self):
+        self.release["assets"][0]["browser_download_url"] = "https://github.com/example/fork/releases/download/untagged-temporary/GameCase.ipa"
+        data = source.build_source(self.seed, "example/fork", self.release, "2.3.4")
+        expected = "https://github.com/example/fork/releases/download/v2.3.4/GameCase.ipa"
+        self.assertEqual(data["apps"][0]["downloadURL"], expected)
+        self.assertEqual(data["apps"][0]["versions"][0]["downloadURL"], expected)
+
     def test_missing_or_empty_ipa_fails(self):
         for assets in [[], [{"name": "GameCase.ipa", "size": 0}]]:
             with self.subTest(assets=assets), self.assertRaises(ValueError):

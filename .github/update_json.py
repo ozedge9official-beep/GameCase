@@ -6,6 +6,7 @@ import plistlib
 import re
 from datetime import datetime, timezone
 from urllib.request import Request, urlopen
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_REPOSITORY = "ozedge9official-beep/GameCase"
@@ -57,9 +58,12 @@ def build_source(seed, repo, release, version, nightly=False):
         raise ValueError("The selected release has no non-empty GameCase.ipa")
     app = data["apps"][0]
     description = prepare_description(release.get("body"))
+    # Draft asset URLs use an untagged placeholder that stops working after publication.
+    tag = "nightly" if nightly else release["tag_name"]
+    download_url = f"https://github.com/{repo}/releases/download/{quote(tag, safe='')}/GameCase.ipa"
     entry = {"version": version, "date": release["published_at"],
              "localizedDescription": description,
-             "downloadURL": asset["browser_download_url"], "size": asset["size"]}
+             "downloadURL": download_url, "size": asset["size"]}
     if nightly:
         entry.update(commit=os.environ.get("commit_sha", "")[:7],
                      headline=os.environ.get("commit_msg", "").strip())
