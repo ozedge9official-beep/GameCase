@@ -42,7 +42,7 @@ enum LCCustomCoverStore {
         guard FileManager.default.fileExists(atPath: url.path) else {
             return nil
         }
-        return UIImage(contentsOfFile: url.path)
+        return LCCoverImageCache.image(at: url)
     }
 
     /// 存盘：长边压到 1600 后以 JPEG 0.85 落盘（临时文件 + 替换，避免写一半被读到）
@@ -56,14 +56,13 @@ enum LCCustomCoverStore {
         let target = fileURL(forBundleIdentifier: bundleIdentifier)
         let tmp = directoryURL.appendingPathComponent(".\(bundleIdentifier).tmp.jpg")
         try data.write(to: tmp, options: .atomic)
-        if fm.fileExists(atPath: target.path) {
-            try fm.removeItem(at: target)
-        }
-        try fm.moveItem(at: tmp, to: target)
+        try LCFileReplacement.replaceFile(at: target, with: tmp)
+        LCCoverImageCache.removeAll()
     }
 
     /// 恢复默认 = 删掉自定义文件，解析链自动回落到客体自带/内置/图标
     static func remove(forBundleIdentifier bundleIdentifier: String) {
+        LCCoverImageCache.removeAll()
         try? FileManager.default.removeItem(at: fileURL(forBundleIdentifier: bundleIdentifier))
     }
 

@@ -119,7 +119,8 @@ enum LCSaveDataStore {
             } else {
                 singleFile = source
             }
-            if let root = contentRoot, LCDatapackImportView.treeFiles(root).isEmpty {
+            let contentSnapshot = try contentRoot.map { try LCFileTree.scan($0) }
+            if let snapshot = contentSnapshot, snapshot.files.isEmpty {
                 throw LCSaveDataError.invalidContent
             }
 
@@ -131,24 +132,26 @@ enum LCSaveDataStore {
                 let dest = saveDir.appendingPathComponent(file.lastPathComponent)
                 let tmp = saveDir.appendingPathComponent(file.lastPathComponent + ".importing")
                 let written = try await LCDatapackImportView.chunkedCopyFile(from: file, to: tmp, isCancelled: { false }) { _ in }
-                guard written == LCDatapackImportView.fileSize(file) else {
+                guard written == file.size && written == LCDatapackImportView.fileSize(file.url) else {
                     try? fm.removeItem(at: tmp)
                     throw CocoaError(.fileWriteUnknown)
                 }
                 try LCFileReplacement.replaceFile(at: dest, with: tmp)
-            } else if let root = contentRoot {
+            } else if let snapshot = contentSnapshot {
                 // 先整集拷到同卷临时夹，再三步换名（旧 save 先挪开、新集就位、删旧集）
                 let incoming = documents.appendingPathComponent("save.importing", isDirectory: true)
                 if fm.fileExists(atPath: incoming.path) {
                     try fm.removeItem(at: incoming)
                 }
                 try fm.createDirectory(at: incoming, withIntermediateDirectories: true)
-                for file in LCDatapackImportView.treeFiles(root) {
-                    let relative = LCDatapackImportView.relativePath(of: file, under: root)
-                    let dest = incoming.appendingPathComponent(relative)
+                for directory in snapshot.directories {
+                    try fm.createDirectory(at: incoming.appendingPathComponent(directory), withIntermediateDirectories: true)
+                }
+                for file in snapshot.files {
+                    let dest = incoming.appendingPathComponent(file.relativePath)
                     try fm.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
-                    let written = try await LCDatapackImportView.chunkedCopyFile(from: file, to: dest, isCancelled: { false }) { _ in }
-                    guard written == LCDatapackImportView.fileSize(file) else {
+                    let written = try await LCDatapackImportView.chunkedCopyFile(from: file.url, to: dest, isCancelled: { false }) { _ in }
+                    guard written == file.size && written == LCDatapackImportView.fileSize(file.url) else {
                         try? fm.removeItem(at: incoming)
                         throw CocoaError(.fileWriteUnknown)
                     }
@@ -183,10 +186,8 @@ enum LCSaveDataStore {
     /// save 内无任何文件时跳过（无可备份），返回 nil。逐文件分块拷贝
     /// 并校验大小，任一失败抛错（调用方据此中止导入）。
     static func makeBackup(of saveDir: URL, in documents: URL, fm: FileManager) async throws -> URL? {
-        let files = LCDatapackImportView.treeFiles(saveDir)
-        guard !files.isEmpty else {
-            return nil
-        }
+        let snapshot = try LCFileTree.scan(saveDir, fileManager: fm)
+        guard !snapshot.files.isEmpty || !snapshot.directories.isEmpty else { return nil }
         let backupsRoot = documents.appendingPathComponent("save-backups", isDirectory: true)
         try fm.createDirectory(at: backupsRoot, withIntermediateDirectories: true)
         let stamp = stamp()
@@ -196,16 +197,22 @@ enum LCSaveDataStore {
             backupDir = backupsRoot.appendingPathComponent("save-\(stamp)-\(suffix)", isDirectory: true)
             suffix += 1
         }
-        try fm.createDirectory(at: backupDir, withIntermediateDirectories: true)
-        for file in files {
-            let relative = LCDatapackImportView.relativePath(of: file, under: saveDir)
-            let dest = backupDir.appendingPathComponent(relative)
+        let pending = backupsRoot.appendingPathComponent(".pending-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: pending, withIntermediateDirectories: false)
+        defer { try? fm.removeItem(at: pending) }
+        for directory in snapshot.directories {
+            try fm.createDirectory(at: pending.appendingPathComponent(directory), withIntermediateDirectories: true)
+        }
+        for file in snapshot.files {
+            let dest = pending.appendingPathComponent(file.relativePath)
             try fm.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
-            let written = try await LCDatapackImportView.chunkedCopyFile(from: file, to: dest, isCancelled: { false }) { _ in }
-            guard written == LCDatapackImportView.fileSize(file) else {
+            let written = try await LCDatapackImportView.chunkedCopyFile(from: file.url, to: dest, isCancelled: { false }) { _ in }
+            guard written == file.size && written == LCDatapackImportView.fileSize(file.url) else {
                 throw CocoaError(.fileWriteUnknown)
             }
         }
+        // Only complete backups receive a user-facing name.
+        try fm.moveItem(at: pending, to: backupDir)
         return backupDir
     }
 }

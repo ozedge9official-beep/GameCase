@@ -688,7 +688,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     func startInstallApp(_ fileUrl:URL) async {
         do {
             self.installprogressVisible = true
-            try await installIpaFile(fileUrl)
+            guard try await installIpaFile(fileUrl) else { return }
             try FileManager.default.removeItem(at: fileUrl)
         } catch {
             errorInfo = error.localizedDescription
@@ -701,9 +701,10 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
         extract(path, destination, progress)
     }
     
-    func installIpaFile(_ url:URL) async throws {
+    @discardableResult
+    func installIpaFile(_ url:URL) async throws -> Bool {
         let fm = FileManager()
-        
+
         let installProgress = Progress.discreteProgress(totalUnitCount: 100)
         self.installProgressPercentage = 0.0
         self.installObserver = installProgress.observe(\.fractionCompleted) { p, v in
@@ -713,13 +714,13 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
         }
         let decompressProgress = Progress.discreteProgress(totalUnitCount: 100)
         installProgress.addChild(decompressProgress, withPendingUnitCount: 80)
-        let payloadPath = fm.temporaryDirectory.appendingPathComponent("Payload")
-        if fm.fileExists(atPath: payloadPath.path) {
-            try fm.removeItem(at: payloadPath)
-        }
-        
+        let extraction = fm.temporaryDirectory.appendingPathComponent(".ipa-extract-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: extraction, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: extraction) }
+        let payloadPath = extraction.appendingPathComponent("Payload", isDirectory: true)
+
         // decompress
-        guard await decompress(url.path, fm.temporaryDirectory.path, decompressProgress) == 0 else {
+        guard await decompress(url.path, extraction.path, decompressProgress) == 0 else {
             throw "lc.appList.urlFileIsNotIpaError".loc
         }
 
@@ -736,12 +737,13 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
         }
 
         let appFolderPath = payloadPath.appendingPathComponent(appBundleName)
-        
+
+        let importedIdentifier = try LCAppInstallTransaction.bundleIdentifier(in: appFolderPath)
         guard let newAppInfo = LCAppInfo(bundlePath: appFolderPath.path) else {
             throw "lc.appList.infoPlistCannotReadError".loc
         }
 
-        var appRelativePath = "\(newAppInfo.bundleIdentifier()!.sanitizeNonACSII()).app"
+        var appRelativePath = "\(importedIdentifier.sanitizeNonACSII()).app"
         var outputFolder = LCPath.bundlePath.appendingPathComponent(appRelativePath)
         var appToReplace : LCAppModel? = nil
         // Folder exist! show alert for user to choose which bundle to replace
@@ -752,29 +754,29 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
             sameBundleIdApp = sharedModel.hiddenApps.filter { app in
                 return app.appInfo.bundleIdentifier()! == newAppInfo.bundleIdentifier()
             }
-            
+
             // we found a hidden app, we need to authenticate before proceeding
             if sameBundleIdApp.count > 0 && !sharedModel.isHiddenAppUnlocked {
                 do {
                     if !(try await LCUtils.authenticateUser()) {
                         self.installprogressVisible = false
-                        return
+                        return false
                     }
                 } catch {
                     errorInfo = error.localizedDescription
                     errorShow = true
                     self.installprogressVisible = false
-                    return
+                    return false
                 }
             }
-            
+
         }
-        
+
         if fm.fileExists(atPath: outputFolder.path) || sameBundleIdApp.count > 0 {
             appRelativePath = "\(newAppInfo.bundleIdentifier()!)_\(Int(CFAbsoluteTimeGetCurrent())).app"
-            
+
             self.installOptions = [AppReplaceOption(isReplace: false, nameOfFolderToInstall: appRelativePath)]
-            
+
             for app in sameBundleIdApp {
                 self.installOptions.append(AppReplaceOption(isReplace: true, nameOfFolderToInstall: app.appInfo.relativeBundlePath, appToReplace: app))
             }
@@ -783,9 +785,9 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                 // user cancelled
                 self.installprogressVisible = false
                 try fm.removeItem(at: payloadPath)
-                return
+                return false
             }
-            
+
             if let appToReplace = installOptionChosen.appToReplace, appToReplace.uiIsShared {
                 outputFolder = LCPath.lcGroupBundlePath.appendingPathComponent(installOptionChosen.nameOfFolderToInstall)
             } else {
@@ -793,47 +795,17 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
             }
             appRelativePath = installOptionChosen.nameOfFolderToInstall
             appToReplace = installOptionChosen.appToReplace
-            if installOptionChosen.isReplace {
-                try fm.removeItem(at: outputFolder)
-            }
         }
-        // Move it!
-        try fm.moveItem(at: appFolderPath, to: outputFolder)
-        let finalNewApp = LCAppInfo(bundlePath: outputFolder.path)
-        finalNewApp?.relativeBundlePath = appRelativePath
-        
-        guard let finalNewApp else {
-            errorInfo = "lc.appList.appInfoInitError".loc
-            errorShow = true
-            return
+        guard !appRelativePath.contains("/"), !appRelativePath.contains("\\"),
+              appRelativePath.hasSuffix(".app"), appRelativePath.count > 4 else {
+            throw CocoaError(.fileReadInvalidFileName)
         }
-        
-        // patch and sign it
-        var signError : String? = nil
-        var signSuccess = false
-        await withUnsafeContinuation({ c in
-            if appToReplace?.uiDontSign ?? false || LCUtils.appGroupUserDefault.bool(forKey: "LCDontSignApp") {
-                finalNewApp.dontSign = true
-            }
-            finalNewApp.patchExecAndSignIfNeed(completionHandler: { success, error in
-                signError = error
-                signSuccess = success
-                c.resume()
-            }, progressHandler: { signProgress in
-                installProgress.addChild(signProgress!, withPendingUnitCount: 20)
-            }, forceSign: false)
-        })
-        
-        // we leave it unsigned even if signing failed
-        if let signError {
-            if signSuccess {
-                errorInfo = "\("lc.appList.signSuccessWithError".loc)\n\n\(signError)"
-            } else {
-                errorInfo = signError.loc
-            }
-            errorShow = true
+        let transaction = try LCAppInstallTransaction(source: appFolderPath, destination: outputFolder)
+        guard let finalNewApp = LCAppInfo(bundlePath: transaction.bundleURL.path) else {
+            throw CocoaError(.fileReadCorruptFile)
         }
-        
+        finalNewApp.relativeBundlePath = appRelativePath
+
         if let appToReplace {
             // copy previous configration to new app
             finalNewApp.autoSaveDisabled = true
@@ -865,11 +837,45 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
             finalNewApp.spoofSDKVersion = true
         }
         finalNewApp.installationDate = Date.now
-        
+
+        try await transaction.commit {
+            // patch and sign it
+            var signError : String? = nil
+            var signSuccess = false
+            await withUnsafeContinuation({ c in
+                if appToReplace?.uiDontSign ?? false || LCUtils.appGroupUserDefault.bool(forKey: "LCDontSignApp") {
+                    finalNewApp.dontSign = true
+                }
+                finalNewApp.patchExecAndSignIfNeed(completionHandler: { success, error in
+                    signError = error
+                    signSuccess = success
+                    c.resume()
+                }, progressHandler: { signProgress in
+                    if let signProgress { installProgress.addChild(signProgress, withPendingUnitCount: 20) }
+                }, forceSign: false)
+            })
+
+            // Preserve unsigned fresh-import behavior; failed updates keep the old app.
+            if let signError, appToReplace == nil || signSuccess {
+                if signSuccess {
+                    errorInfo = "\("lc.appList.signSuccessWithError".loc)\n\n\(signError)"
+                } else {
+                    errorInfo = signError.loc
+                }
+                errorShow = true
+            }
+
+            if appToReplace != nil && !signSuccess {
+                throw signError ?? "lc.appList.appInfoInitError".loc
+            }
+        }
+        finalNewApp.setBundlePath(outputFolder.path)
+        LCCoverImageCache.removeAll()
+
         DispatchQueue.main.async {
             if let appToReplace {
                 let newAppModel = LCAppModel(appInfo: finalNewApp, delegate: self)
-                
+
                 if appToReplace.uiIsHidden {
                     sharedModel.hiddenApps.removeAll { $0 == appToReplace }
                     sharedModel.hiddenApps.append(newAppModel)
@@ -881,7 +887,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
             } else {
                 let newAppModel = LCAppModel(appInfo: finalNewApp, delegate: self)
                 sharedModel.apps.append(newAppModel)
-                
+
                 // add url schemes
                 if let urlSchemes = finalNewApp.urlSchemes(), urlSchemes.count > 0 {
                     UserDefaults.lcShared().mutableArrayValue(forKey: "LCGuestURLSchemes")
@@ -894,7 +900,9 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
             LCCoverFetchService.shared.prefetch(appInfo: finalNewApp)
             self.installprogressVisible = false
         }
+        return true
     }
+
 
     func startInstallFromUrl() async {
         guard let installUrlStr = await installUrlInput.open(), installUrlStr.count > 0 else {
@@ -1043,10 +1051,11 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
             }
             
             do {
-                try await installIpaFile(installUrl)
+                guard try await installIpaFile(installUrl) else { return }
             } catch {
                 errorInfo = error.localizedDescription
                 errorShow = true
+                return
             }
             
             do {
@@ -1480,7 +1489,7 @@ enum LCGameLibraryInfo {
                 continue
             }
             let area = size.width * size.height
-            if area > (best?.area ?? 0), let image = UIImage(contentsOfFile: path) {
+            if area > (best?.area ?? 0), let image = LCCoverImageCache.image(at: URL(fileURLWithPath: path)) {
                 best = (image, area)
             }
         }
@@ -1496,7 +1505,7 @@ enum LCGameLibraryInfo {
         guard let size = imagePixelSize(atPath: path), isLandscapeCoverSize(size) else {
             return nil
         }
-        return UIImage(contentsOfFile: path)
+        return LCCoverImageCache.image(at: URL(fileURLWithPath: path))
     }
 
     /// 只读图片像素尺寸（不整图解码）
@@ -1522,7 +1531,7 @@ enum LCGameLibraryInfo {
         for bundle in [Bundle(for: LCAppModel.self), Bundle.main] {
             for subdirectory in [nil, "GameCovers"] {
                 if let url = bundle.url(forResource: resourceName, withExtension: "jpg", subdirectory: subdirectory),
-                   let image = UIImage(contentsOfFile: url.path) {
+                   let image = LCCoverImageCache.image(at: url) {
                     return image
                 }
             }
@@ -1581,8 +1590,8 @@ enum LCGameLibraryInfo {
     /// 封面解析（单一入口，主页 hero / 网格卡 / 横屏轮播 / 最近游玩 / 设置页共用）：
     /// 自定义封面 → 客体 IPA 自带横版封面 → 宿主内置原画 → 联网抓取缓存
     /// → nil（卡片再退回图标兜底）。
-    /// 本链不做图片缓存：每次求值都从磁盘现读现解码，换自定义封面后各处随下一次
-    /// 界面刷新（关设置页、状态变更）即为新图，无需额外失效处理。
+    /// Image instances use a bounded, file-version-aware cache. Replacing a
+    /// cover invalidates its version; source priority and pixel size stay intact.
     static func bannerResolution(for appInfo: LCAppInfo) -> (image: UIImage?, source: BannerSource) {
         if let custom = customCoverImage(for: appInfo) {
             return (custom, .custom)

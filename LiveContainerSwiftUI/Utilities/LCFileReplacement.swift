@@ -4,6 +4,22 @@ import Darwin
 /// Staged files must be on the destination volume. rename replaces a file
 /// atomically, so a failed commit leaves the previous file intact.
 enum LCFileReplacement {
+    /// Restore as many originals as possible and retain unrecovered items.
+    /// Used by Mod replacement, whose enabled and disabled names differ.
+    static func restoreMovedItems(_ items: [URL], to directory: URL, recoveryDirectory: URL,
+                                  cause: Error, fileManager fm: FileManager = .default) throws {
+        var failure: Error?
+        for item in items {
+            do { try fm.moveItem(at: item, to: directory.appendingPathComponent(item.lastPathComponent)) }
+            catch { failure = error }
+        }
+        if let failure {
+            throw NSError(domain: "GameCase.ImportRecovery", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "\(cause.localizedDescription)\n\(failure.localizedDescription)\nRecovery: \(recoveryDirectory.path)"
+            ])
+        }
+        try? fm.removeItem(at: recoveryDirectory)
+    }
     static func replaceFile(at destination: URL, with staged: URL) throws {
         guard rename(staged.path, destination.path) == 0 else {
             throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
