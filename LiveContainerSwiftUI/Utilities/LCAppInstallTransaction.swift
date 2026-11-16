@@ -12,11 +12,16 @@ final class LCAppInstallTransaction {
         let root = bundle.resolvingSymlinksInPath().standardizedFileURL.path + "/"
         let infoURL = bundle.appendingPathComponent("Info.plist")
         guard infoURL.resolvingSymlinksInPath().standardizedFileURL.path.hasPrefix(root),
-              let info = try PropertyListSerialization.propertyList(from: Data(contentsOf: infoURL), format: nil) as? [String: Any],
-              let identifier = info["CFBundleIdentifier"] as? String,
+              let info = try PropertyListSerialization.propertyList(from: Data(contentsOf: infoURL), format: nil) as? [String: Any] else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        // LCAppInfo restores these original fields after an interrupted sign.
+        // Validate the same identity/executable that it will actually use.
+        let recovering = info["LCBundleIdentifier"] != nil
+        guard let identifier = info[recovering ? "LCBundleIdentifier" : "CFBundleIdentifier"] as? String,
               !identifier.isEmpty, !identifier.contains(where: { $0 == "/" || $0 == "\\" || $0.isWhitespace || $0 == "\0" }),
               identifier != ".", identifier != "..",
-              let executable = info["CFBundleExecutable"] as? String,
+              let executable = info[recovering ? "LCBundleExecutable" : "CFBundleExecutable"] as? String,
               !executable.isEmpty, executable != ".", executable != "..",
               !executable.contains("/"), !executable.contains("\\"), !executable.contains("\0") else {
             throw CocoaError(.fileReadCorruptFile)

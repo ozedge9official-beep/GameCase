@@ -160,6 +160,11 @@ let malformed = try ipaBundle("malformed")
 let malformedInfo = try PropertyListSerialization.data(fromPropertyList: ["CFBundleIdentifier": "test.game", "CFBundleExecutable": "../other"], format: .xml, options: 0)
 try malformedInfo.write(to: malformed.appendingPathComponent("Info.plist"))
 expectFailure("invalid executable path rejected") { _ = try LCAppInstallTransaction.bundleIdentifier(in: malformed) }
+let recoveredBundle = try ipaBundle("recovered-bundle")
+let recoveredInfo: [String: Any] = ["CFBundleIdentifier": "temporary.wrapper", "CFBundleExecutable": "missing-temporary-executable",
+                                  "LCBundleIdentifier": "test.game", "LCBundleExecutable": "Game"]
+try PropertyListSerialization.data(fromPropertyList: recoveredInfo, format: .xml, options: 0).write(to: recoveredBundle.appendingPathComponent("Info.plist"))
+try verify(LCAppInstallTransaction.bundleIdentifier(in: recoveredBundle) == "test.game", "interrupted-sign IPA recovery fields retain original compatibility")
 
 let cache = LCFileValueCache<NSString>(costLimit: 1024, countLimit: 8)
 let cover = root.appendingPathComponent("cover")
