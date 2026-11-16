@@ -14,14 +14,14 @@
       "bundleIdentifier": "com.tiaoge.gamecase",
       "developerName": "GameCase",
       "subtitle": "Import an IPA and its datapack - just play.",
-      "version": "1.0.20",
-      "versionDate": "2026-11-16T21:50:03Z",
+      "version": "1.0.21",
+      "versionDate": "2026-11-16T22:09:56Z",
       "downloadURL": "https://github.com/whodaregg/GameCase/releases/download/nightly/GameCase.ipa",
       "localizedDescription": "GameCase is a sideloading game container built for iOS game ports. Import a game IPA and its romfs datapack into the library, manage each game's own launcher settings in one place, and play - no jailbreak required.",
       "iconURL": "https://raw.githubusercontent.com/whodaregg/GameCase/main/screenshots/AppIcon1024.png",
       "tintColor": "#0784FC",
       "category": "utilities",
-      "size": 11026888,
+      "size": 11025573,
       "screenshotURLs": [],
       "appPermissions": {
         "entitlements": [
@@ -77,16 +77,16 @@
       },
       "versions": [
         {
-          "version": "1.0.20",
-          "date": "2026-11-16T21:50:03Z",
-          "localizedDescription": "Provide Chinese and English notes for all releases (7)\nhttps://github.com/whodaregg/GameCase/actions/runs/43963200492",
+          "version": "1.0.21",
+          "date": "2026-11-16T22:09:56Z",
+          "localizedDescription": "Migrate account links and ship GameCase 1.0.21 (8)\nhttps://github.com/whodaregg/GameCase/actions/runs/43966100665",
           "downloadURL": "https://github.com/whodaregg/GameCase/releases/download/nightly/GameCase.ipa",
-          "size": 11026888,
-          "commit": "f47ea62",
-          "headline": "Provide Chinese and English notes for all releases (#7)"
+          "size": 11025573,
+          "commit": "d37a6c5",
+          "headline": "Migrate account links and ship GameCase 1.0.21 (#8)"
         }
       ],
-      "versionDescription": "Provide Chinese and English notes for all releases (7)\nhttps://github.com/whodaregg/GameCase/actions/runs/43963200492"
+      "versionDescription": "Migrate account links and ship GameCase 1.0.21 (8)\nhttps://github.com/whodaregg/GameCase/actions/runs/43966100665"
     }
   ],
   "news": []
