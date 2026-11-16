@@ -1,12 +1,12 @@
 {
   "name": "GameCase",
   "identifier": "com.livecontainer.source",
-  "website": "https://github.com/Tiaoge-tou/GameCase",
+  "website": "https://github.com/ozedge9official-beep/GameCase",
   "subtitle": "GameCase AltStore Source.",
   "description": "This is the AltStore Source for GameCase.\n\nGameCase is a sideloading game container built for iOS game ports. Import a game IPA and its romfs datapack into the library, manage each game's own launcher settings in one place, and play - no jailbreak required.",
   "tintColor": "#0784FC",
-  "iconURL": "https://raw.githubusercontent.com/Tiaoge-tou/GameCase/main/screenshots/AppIcon1024.png",
-  "headerURL": "https://raw.githubusercontent.com/Tiaoge-tou/GameCase/main/screenshots/header.png",
+  "iconURL": "https://raw.githubusercontent.com/ozedge9official-beep/GameCase/main/screenshots/AppIcon1024.png",
+  "headerURL": "https://raw.githubusercontent.com/ozedge9official-beep/GameCase/main/screenshots/header.png",
   "apps": [
     {
       "beta": false,
@@ -16,16 +16,16 @@
       "subtitle": "Import an IPA and its datapack - just play.",
       "version": "1.0.8",
       "versionDate": "2025-08-19",
-      "downloadURL": "https://github.com/Tiaoge-tou/GameCase/releases/download/v1.0.8/GameCase.ipa",
+      "downloadURL": "https://github.com/ozedge9official-beep/GameCase/releases/download/v1.0.8/GameCase.ipa",
       "localizedDescription": "GameCase is a sideloading game container built for iOS game ports. Import a game IPA and its romfs datapack into the library, manage each game's own launcher settings in one place, and play - no jailbreak required.",
-      "iconURL": "https://raw.githubusercontent.com/Tiaoge-tou/GameCase/main/screenshots/AppIcon1024.png",
+      "iconURL": "https://raw.githubusercontent.com/ozedge9official-beep/GameCase/main/screenshots/AppIcon1024.png",
       "tintColor": "#0784FC",
       "category": "utilities",
       "size": 11375353,
       "screenshotURLs": [
-        "https://raw.githubusercontent.com/Tiaoge-tou/GameCase/main/docs/media/library-landscape.jpg",
-        "https://raw.githubusercontent.com/Tiaoge-tou/GameCase/main/docs/media/library-portrait.jpg",
-        "https://raw.githubusercontent.com/Tiaoge-tou/GameCase/main/docs/media/game-settings.jpg"
+        "https://raw.githubusercontent.com/ozedge9official-beep/GameCase/main/docs/media/library-landscape.jpg",
+        "https://raw.githubusercontent.com/ozedge9official-beep/GameCase/main/docs/media/library-portrait.jpg",
+        "https://raw.githubusercontent.com/ozedge9official-beep/GameCase/main/docs/media/game-settings.jpg"
       ],
       "appPermissions": {
         "entitlements": [

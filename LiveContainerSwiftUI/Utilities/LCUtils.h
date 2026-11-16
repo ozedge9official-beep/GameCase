@@ -53,7 +53,6 @@ uint32_t dyld_get_sdk_version(const struct mach_header* mh);
 @end
 
 @interface NSUserDefaults(LiveContainer)
-+ (bool)sideStoreExist;
 @end
 
 @interface LCP12CertHelper : NSObject

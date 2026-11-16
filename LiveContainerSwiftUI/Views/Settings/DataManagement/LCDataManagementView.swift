@@ -24,7 +24,6 @@ struct LCDataManagementView : View {
     @StateObject private var tmpRemovalAlert = YesNoHelper()
     @StateObject private var cacheRemovalAlert = YesNoHelper() 
 
-    
     @State var errorShow = false
     @State var errorInfo = ""
     @State var successShow = false
@@ -302,10 +301,7 @@ struct LCDataManagementView : View {
         let fm = FileManager.default
 
         var allApps = sharedModel.apps + sharedModel.hiddenApps
-        if UserDefaults.sideStoreExist() {
-            allApps.append(LCAppModel(appInfo: BuiltInSideStoreAppInfo.shared))
-        }
-        
+
         var cleanedCount = 0
 
         do {
@@ -344,7 +340,6 @@ struct LCDataManagementView : View {
         }
     }
 
-
     func moveDanglingFolders() async {
         let fm = FileManager()
         do {
@@ -358,7 +353,6 @@ struct LCDataManagementView : View {
                     appDataFoldersInUse.update(with: container.folderName);
                 }
 
-                
                 if let folder = app.appInfo.tweakFolder {
                     tweakFoldersInUse.update(with: folder);
                 }

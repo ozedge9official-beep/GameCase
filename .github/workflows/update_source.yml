@@ -7,6 +7,7 @@ on:
 
 jobs:
   update-source:
+    if: github.event_name != 'release' || github.event.release.tag_name != 'nightly'
     runs-on: ubuntu-latest
 
     permissions:
@@ -15,16 +16,13 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event.release.tag_name || github.sha }}
 
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
         python-version: '3.x'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
 
     - name: Record job start time
       id: job_start_time
@@ -42,14 +40,16 @@ jobs:
       id: update_source
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TAG: ${{ github.event.release.tag_name }}
       run: |
         python .github/update_json.py
 
     - name: Upload source JSONs to the triggering release
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TAG: ${{ github.event.release.tag_name }}
       run: |
-        TAG="${{ github.event.release.tag_name }}"
+        TAG="$RELEASE_TAG"
         if [ -z "$TAG" ]; then
           TAG=$(gh api "repos/${{ github.repository }}/releases" --jq '[.[] | select(.draft == false and .prerelease == false and .tag_name != "nightly")][0].tag_name // empty')
         fi
@@ -85,7 +85,6 @@ jobs:
           return 1
         }
         upload_one .github/apps.json
-        upload_one .github/apps_ss_lc.json
 
     - name: Calculate job duration
       id: duration
@@ -113,6 +112,3 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "This job took ${{ steps.duration.outputs.duration }} to complete." >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "📆 Next Scheduled Run" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "The next scheduled run will be tomorrow at midnight UTC." >> $GITHUB_STEP_SUMMARY

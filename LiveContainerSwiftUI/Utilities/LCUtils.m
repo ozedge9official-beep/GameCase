@@ -31,12 +31,10 @@
     return [nud objectForKey:@"LCCertificateData"];
 }
 
-
 + (void)setCertificatePassword:(NSString *)certPassword {
     [NSUserDefaults.standardUserDefaults setObject:certPassword forKey:@"LCCertificatePassword"];
     [[[NSUserDefaults alloc] initWithSuiteName:[LCSharedUtils appGroupID]] setObject:certPassword forKey:@"LCCertificatePassword"];
 }
-
 
 #pragma mark Multitasking
 + (NSString *)liveProcessBundleIdentifier {
@@ -89,7 +87,6 @@
 }
 
 #pragma mark Code signing
-
 
 + (void)loadStoreFrameworksWithError2:(NSError **)error {
     // too lazy to use dispatch_once
@@ -313,7 +310,6 @@
     if (*error) return nil;
     
     NSURL *tmpIPAPath = [tmpPath URLByAppendingPathComponent:[NSString stringWithFormat:@"%@.ipa", newBundleName]];
-    
 
     [manager copyItemAtURL:bundlePath toURL:[tmpPayloadPath URLByAppendingPathComponent:@"App.app"] error:error];
     if (*error) return nil;
@@ -392,8 +388,7 @@
     if(containerId) {
         dict[@"com.apple.private.security.container-required"] = infoDict[@"CFBundleIdentifier"];
     }
-    
-    
+
     // We have to change executable's UUID so iOS won't consider 2 executables the same
     NSString* errorChangeUUID = LCParseMachO([execFromPath.path UTF8String], false, ^(const char *path, struct mach_header_64 *header, int fd, void* filePtr) {
         LCChangeMachOUUID(header);
@@ -426,18 +421,7 @@
     // we don't care about errors when removing unnecessary files. errors occur probably because the file does not exist
     // we remove the extension
     [manager removeItemAtURL:[appBundlePath URLByAppendingPathComponent:@"PlugIns"] error:nil];
-    // remove all sidestore stuff
-    if([NSUserDefaults sideStoreExist]) {
-        [manager removeItemAtURL:[appBundlePath URLByAppendingPathComponent:@"Frameworks/SideStoreSupport.framework"] error:nil];
-        [manager removeItemAtURL:[appBundlePath URLByAppendingPathComponent:@"Frameworks/SideStore.framework"] error:nil];
-        [manager removeItemAtURL:[appBundlePath URLByAppendingPathComponent:@"Frameworks/SideStoreApp.framework"] error:nil];
-        [manager removeItemAtURL:[appBundlePath URLByAppendingPathComponent:@"Intents.intentdefinition"] error:nil];
-        [manager removeItemAtURL:[appBundlePath URLByAppendingPathComponent:@"ViewApp.intentdefinition"] error:nil];
-        [manager removeItemAtURL:[appBundlePath URLByAppendingPathComponent:@"Metadata.appintents"] error:nil];
-        [infoDict removeObjectForKey:@"INIntentsSupported"];
-        [infoDict removeObjectForKey:@"NSUserActivityTypes"];
-    }
-    
+
     [infoDict writeToURL:infoPath error:error];
     
     dlopen("/System/Library/PrivateFrameworks/PassKitCore.framework/PassKitCore", RTLD_GLOBAL);
@@ -467,6 +451,5 @@
 + (NSData*)bookmarkForURL:(NSURL*) url {
     return [url bookmarkDataWithOptions:(1<<11) includingResourceValuesForKeys:0 relativeToURL:0 error:0];
 }
-
 
 @end

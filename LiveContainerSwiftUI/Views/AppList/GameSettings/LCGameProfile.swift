@@ -211,7 +211,7 @@ final class LCGamePrefs {
             // 文件还不存在（客体没跑过）：空档案是正常起点
             values = [:]
             format = .binary
-            loadFailed = false
+            loadFailed = FileManager.default.fileExists(atPath: prefsURL.path)
             return
         }
         var fmt: PropertyListSerialization.PropertyListFormat = .binary
@@ -287,7 +287,9 @@ final class LCGamePrefs {
     /// 写 / 删一个任意键（云存档把书签 Data 同步进客体的
     /// cloudSavesBookmark 键用）：值与现存一致时不落盘，避免每次
     /// 启动维护都重写整份 plist。
-    func setRawValue(_ value: Any?, forKey key: String) {
+    @discardableResult
+    func setRawValue(_ value: Any?, forKey key: String) -> Bool {
+        guard !loadFailed else { return false }
         let old = values[key]
         let unchanged: Bool
         switch (old, value) {
@@ -300,13 +302,13 @@ final class LCGamePrefs {
         default:
             unchanged = false
         }
-        if unchanged { return }
+        if unchanged { return true }
         if let value {
             values[key] = value
         } else {
             values.removeValue(forKey: key)
         }
-        save()
+        return save()
     }
 
     /// 恢复默认：清掉档案内全部变量的已保存选择
