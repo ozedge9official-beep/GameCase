@@ -2,6 +2,7 @@ name: Xcode - Build
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -12,6 +13,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   regressions:

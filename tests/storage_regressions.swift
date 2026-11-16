@@ -25,7 +25,7 @@ do {
 } catch {}
 try require(text(destination) == "new", "failed rename preserves original")
 
-final class FailingMoveManager: FileManager, @unchecked Sendable {
+final class FailingMoveManager: FileManager {
     var stagingPath = ""
     override func moveItem(at source: URL, to destination: URL) throws {
         if source.deletingLastPathComponent().path == stagingPath && source.lastPathComponent == "two" {
