@@ -141,6 +141,12 @@ do {
     preconditionFailure("signing/preparation failure must abort replacement")
 } catch { reliabilityChecks += 1 }
 try verify(text(oldBundle.appendingPathComponent("Game")) == "old playable executable", "failed preparation preserves playable old app")
+let noReplacement = try LCAppInstallTransaction(source: ipaBundle("source-separate"), destination: oldBundle, allowReplacing: false)
+do {
+    try await noReplacement.commit {}
+    preconditionFailure("install-as-new must not overwrite a colliding destination")
+} catch { reliabilityChecks += 1 }
+try verify(text(oldBundle.appendingPathComponent("Game")) == "old playable executable", "install-as-new collision preserves existing bundle")
 final class BrokenInstallCommit: FileManager {
     override func moveItem(at source: URL, to destination: URL) throws {
         if source.deletingLastPathComponent().lastPathComponent.hasPrefix(".ipa-install-") {

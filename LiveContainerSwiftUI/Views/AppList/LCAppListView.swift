@@ -800,7 +800,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
               appRelativePath.hasSuffix(".app"), appRelativePath.count > 4 else {
             throw CocoaError(.fileReadInvalidFileName)
         }
-        let transaction = try LCAppInstallTransaction(source: appFolderPath, destination: outputFolder)
+        let transaction = try LCAppInstallTransaction(source: appFolderPath, destination: outputFolder, allowReplacing: appToReplace != nil)
         guard let finalNewApp = LCAppInfo(bundlePath: transaction.bundleURL.path) else {
             throw CocoaError(.fileReadCorruptFile)
         }

@@ -7,6 +7,7 @@ final class LCAppInstallTransaction {
     let bundleURL: URL
     private let destination: URL
     private let fm: FileManager
+    private let allowReplacing: Bool
 
     static func bundleIdentifier(in bundle: URL) throws -> String {
         let root = bundle.resolvingSymlinksInPath().standardizedFileURL.path + "/"
@@ -33,9 +34,10 @@ final class LCAppInstallTransaction {
         return identifier
     }
 
-    init(source: URL, destination: URL, fileManager fm: FileManager = .default) throws {
+    init(source: URL, destination: URL, allowReplacing: Bool = true, fileManager fm: FileManager = .default) throws {
         self.destination = destination
         self.fm = fm
+        self.allowReplacing = allowReplacing
         stagingDirectory = destination.deletingLastPathComponent().appendingPathComponent(".ipa-install-\(UUID().uuidString)", isDirectory: true)
         bundleURL = stagingDirectory.appendingPathComponent(destination.lastPathComponent, isDirectory: true)
         try fm.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
@@ -46,6 +48,7 @@ final class LCAppInstallTransaction {
 
     func commit(after prepare: () async throws -> Void) async throws {
         try await prepare()
+        guard allowReplacing || !fm.fileExists(atPath: destination.path) else { throw CocoaError(.fileWriteFileExists) }
         try LCFileReplacement.commitDirectory(stagingDirectory, to: destination.deletingLastPathComponent(),
                                               names: [destination.lastPathComponent], fileManager: fm)
     }
