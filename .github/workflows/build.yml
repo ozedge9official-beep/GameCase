@@ -93,10 +93,27 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           body: |
+            ## 中文
+
+            GameCase Nightly 自动构建测试版。
+
+            **提交：** [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+
+            对应源码及构建说明见下方 `GameCase-source.tar.gz` 附件。
+            许可与归属通知随 IPA 和源码包一同提供。
+
+            [构建记录](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            ---
+
+            ## English
+
+            GameCase Nightly is an automated preview build.
+
             **Commit:** [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
 
             Corresponding source and build instructions: `GameCase-source.tar.gz` below.
-            Licenses and notices are included in the IPA and source bundle.
+            Licenses and attribution notices are included in the IPA and source bundle.
 
             [Build workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           files: |
