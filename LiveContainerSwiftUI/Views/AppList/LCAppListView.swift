@@ -897,9 +897,6 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                 }
             }
 
-            // 导入完成预抓封面（Phase 19）：解析链落到图标且能解析出标题 ID
-            // 时后台抓一次官方主视觉，结果走服务回调 bump libraryRefresh
-            LCCoverFetchService.shared.prefetch(appInfo: finalNewApp)
             self.installprogressVisible = false
         }
         return true
@@ -1521,26 +1518,6 @@ enum LCGameLibraryInfo {
         return CGSize(width: width.doubleValue, height: height.doubleValue)
     }
 
-    /// 宿主内置封面：LiveContainerSwiftUI/GameCovers/cover-<标题ID>.jpg，
-    /// 该目录属 LiveContainerSwiftUI 同步根组，资源打进 LiveContainerSwiftUI.framework 的 bundle。
-    static func bundledCoverImage(for appInfo: LCAppInfo) -> UIImage? {
-        guard let titleId = titleId(from: appInfo) else {
-            return nil
-        }
-        let resourceName = "cover-\(titleId)"
-        // 先本模块 framework 的 bundle（LCAppModel 为本模块类作锚），再兜底主 app bundle；
-        // 同步组资源一般摊平在 bundle 根，也兼容 GameCovers 子目录形态。
-        for bundle in [Bundle(for: LCAppModel.self), Bundle.main] {
-            for subdirectory in [nil, "GameCovers"] {
-                if let url = bundle.url(forResource: resourceName, withExtension: "jpg", subdirectory: subdirectory),
-                   let image = LCCoverImageCache.image(at: url) {
-                    return image
-                }
-            }
-        }
-        return nil
-    }
-
     /// 从客体 bundle id 提取标题 ID：形如 org.nxnative.010013c00e930000，末段 16 位十六进制即标题 ID（大小写归一为大写）。
     static func titleId(from appInfo: LCAppInfo) -> String? {
         guard let bundleId = appInfo.bundleIdentifier()?.lowercased() else {
@@ -1558,7 +1535,6 @@ enum LCGameLibraryInfo {
     enum BannerSource {
         case custom   // 玩家自定义（宿主 Documents/CustomCovers）
         case guest    // 客体 IPA 自带横版图
-        case bundled  // 宿主内置原画
         case fetched  // 联网获取（宿主 Documents/FetchedCovers，按标题 ID 抓的官方主视觉）
         case icon     // 无横版图，卡片退回应用图标兜底
 
@@ -1566,7 +1542,6 @@ enum LCGameLibraryInfo {
             switch self {
             case .custom: return "自定义"
             case .guest: return "游戏自带"
-            case .bundled: return "内置原画"
             case .fetched: return "联网获取"
             case .icon: return "应用图标"
             }
@@ -1590,7 +1565,7 @@ enum LCGameLibraryInfo {
     }
 
     /// 封面解析（单一入口，主页 hero / 网格卡 / 横屏轮播 / 最近游玩 / 设置页共用）：
-    /// 自定义封面 → 客体 IPA 自带横版封面 → 宿主内置原画 → 联网抓取缓存
+    /// 自定义封面 → 客体 IPA 自带横版封面 → 联网抓取缓存
     /// → nil（卡片再退回图标兜底）。
     /// Image instances use a bounded, file-version-aware cache. Replacing a
     /// cover invalidates its version; source priority and pixel size stay intact.
@@ -1600,9 +1575,6 @@ enum LCGameLibraryInfo {
         }
         if let guest = guestLandscapeCover(for: appInfo) {
             return (guest, .guest)
-        }
-        if let bundled = bundledCoverImage(for: appInfo) {
-            return (bundled, .bundled)
         }
         if let fetched = fetchedCoverImage(for: appInfo) {
             return (fetched, .fetched)

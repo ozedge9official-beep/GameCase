@@ -26,8 +26,8 @@ GameCase 是一个专为 iOS 移植游戏设计的侧载游戏容器。它基于
 **Mod 与金手指**
 每款游戏有自己的 Mod 组：把散装 Mod 放入对应位置即自动接线，启动生效。金手指导入氛围（Atmosphère）格式文件，逐条开关，数据型修改真实生效。
 
-**封面，不用你操心**
-优先用 IPA 自带横版图；有官方主视觉的，按游戏 ID 从任天堂商店自动抓取 1920×1080 封面；也可以换成你自己的图，或随时恢复默认。
+**封面，由你选择**
+优先使用游戏 IPA 自带的横版图，也可以从相册或文件设置自己的封面。联网获取在游戏设置页手动触发；导入和浏览游戏库不会自动请求商店。请确保有权使用相关图片。
 
 **容器夹，就是游戏名**
 每款游戏的数据容器文件夹以游戏名命名（`Data/Application/<游戏名>/`）。在「文件」App 里手动放数据包、管存档时，一眼就知道哪个夹是哪款游戏。
@@ -40,20 +40,6 @@ GameCase 是一个专为 iOS 移植游戏设计的侧载游戏容器。它基于
 
 **手柄与证书**
 手柄页实时列出已连接手柄与电量状态（按 NX2Apple 的 Controllers 页移植）；容器设置里导入与签名同团队的开发者证书后，可免 JIT 运行。
-
-## 截图
-
-![横屏游戏库](docs/media/library-landscape.jpg)
-
-横屏游戏库：封面牌组，中间为当前选中的游戏。
-
-![竖屏游戏库主页](docs/media/library-portrait.jpg)
-
-竖屏游戏库主页：大封面、「你的游戏」网格、「最近游玩」与底部的开始按钮。
-
-![游戏设置页](docs/media/game-settings.jpg)
-
-游戏设置页（以撒）：显示分组，含主机模式、超分、游戏语言与帧数计数器。
 
 ## 三步开玩
 
@@ -79,15 +65,27 @@ GameCase 是一个专为 iOS 移植游戏设计的侧载游戏容器。它基于
 
 GameCase 站在以下开源工作之上，特此致谢：
 
-- **[LiveContainer](https://github.com/LiveContainer/LiveContainer)** —— 本项目的底座（在容器内免安装运行 iOS 应用的启动器）。原作者 **Duy Tran（[khanhduytran0](https://github.com/khanhduytran0)）**，主要维护者 **[hugeBlack](https://github.com/hugeBlack)**，以及 LiveContainer 组织与众多贡献者。本项目完整继承其代码与 git 历史，并沿用同一许可证 **GNU AGPL v3.0**（见仓库根目录 `LICENSE`）。上游原 README 全文保留于 [docs/livecontainer-readme.md](docs/livecontainer-readme.md)。
+本仓库的 GitHub fork 来源链为 [Joshliew33/GameCase](https://github.com/Joshliew33/GameCase) → [Tiaoge-tou/GameCase](https://github.com/Tiaoge-tou/GameCase)。本分叉的修改与发布由 ozedge9official-beep/GameCase 维护，不代表原作者的官方发行。
+
+- **[LiveContainer](https://github.com/LiveContainer/LiveContainer)** —— 本项目的底座（在容器内免安装运行 iOS 应用的启动器）。原作者 **Duy Tran（[khanhduytran0](https://github.com/khanhduytran0)）**，主要维护者 **[hugeBlack](https://github.com/hugeBlack)**，以及 LiveContainer 组织与众多贡献者。本项目继承上游代码，保留原有版权与许可声明，并沿用同一主许可证 **GNU AGPL v3.0**（见仓库根目录 `LICENSE`）。上游原 README 全文保留于 [docs/livecontainer-readme.md](docs/livecontainer-readme.md)。
 - **[nxnative](https://github.com/seedds/nxnative)**（作者 **[seedds](https://github.com/seedds)**）—— 客体游戏移植的工具链与生态来源：GameCase 中运行的移植游戏 IPA 由 nxnative 产出（NSO 重写、Horizon HLE、NVN→Metal）。
 - **[NX2Apple](https://github.com/LNPANDY/NX2Apple)**（作者 **[LNPANDY](https://github.com/LNPANDY)**）—— 设计参考来源：游戏库界面的效仿对象、其壳的手柄设置页（Controllers）被移植进 GameCase，其一壳多游戏的思路亦为本项目的参照。
 
+## 许可证与分发资料
+
+项目整体按仓库根目录的 [GNU AGPL v3](LICENSE) 发布。第三方部分保留各自适用的版权与许可，完整文本和来源见 [第三方通知索引](THIRD_PARTY_NOTICES.md)。保留致谢链接不能替代保留完整的许可、版权及必要的 NOTICE。
+
+分发修改版时，应保留原有通知，显著说明修改及相关日期，并提供与所分发安装包相对应、可获得的源码及必要构建资料。发布页应直接指向相应 tag/commit，而非仅链接随时变化的 main。GitHub 自动源码 ZIP 不会展开子模块，不能仅凭其存在就认定完整对应源码已齐备。
+
+本分叉 v1.0.16–v1.0.20 的改动见 [版本记录](docs/releases/)；许可资料核对日期为 2026-11-17。1.0.20 起，设置中的“许可证与源代码”可离线阅读随包许可；Release 同时提供 GameCase-source.tar.gz、LICENSE、THIRD_PARTY_NOTICES.md 与 SHA256SUMS。源码包包含固定依赖、OpenSSL 原始源码与 [构建/安装说明](docs/BUILDING.md)，发布时校验与 IPA 对应。
+
+本次移除了未核实授权的内置游戏封面及 README 游戏截图，保留游戏自带和用户自选图片。处理结果、历史版本边界与预编译依赖的溯源限制见 [审查记录](docs/license-review.md)。代码许可不会自动授予游戏素材权利，补齐资料也不等于无条件的合规保证。
+
 ## 声明
 
-- GameCase 本身**不包含任何游戏内容**。游戏 IPA 与数据包（romfs.img）需由用户自备，并请确保来源合法。
+- GameCase 不提供游戏程序、ROM、游戏数据包或解密密钥。游戏 IPA 与数据包（romfs.img）需由用户自行提供，并确保有权使用。用户提供和联网获取的图片需有相应权利，代码许可证不授予游戏素材的复制和再分发权。
 - 相关游戏的版权归各原厂所有，本项目与上述原作者、团队及游戏厂商均无隶属关系。
-- 本项目按 GNU AGPL v3.0 发布；若你分发修改版，请同样以 AGPL-3.0 开源并保留上述归属。
+- 本项目按 GNU AGPL v3.0 发布；分发修改版应履行相应源码、归属与许可通知义务，并保留第三方部分各自适用的条件。软件按适用许可证中的无担保条款提供。
 
 ## 链接
 

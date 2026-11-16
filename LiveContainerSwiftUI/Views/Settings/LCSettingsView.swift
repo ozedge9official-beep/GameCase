@@ -362,9 +362,7 @@ struct LCSettingsView: View {
                 HStack {
                     Image(systemName: "doc.text")
                         .frame(width: 24, alignment: .center)
-                    Button("GNU AGPL-3.0") {
-                        openLicense()
-                    }
+                    NavigationLink("许可证与源代码") { LCLegalView() }
                 }
             } header: {
                 Text("lc.settings.about".loc)
@@ -498,9 +496,6 @@ struct LCSettingsView: View {
         UIApplication.shared.open(URL(string: "https://github.com/ozedge9official-beep/GameCase")!)
     }
 
-    func openLicense() {
-        UIApplication.shared.open(URL(string: "https://github.com/ozedge9official-beep/GameCase/blob/main/LICENSE")!)
-    }
 
     func openGitHub() {
         UIApplication.shared.open(URL(string: "https://github.com/LiveContainer/LiveContainer")!)

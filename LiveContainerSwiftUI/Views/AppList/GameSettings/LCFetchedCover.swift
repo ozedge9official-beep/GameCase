@@ -2,9 +2,9 @@
 //  LCFetchedCover.swift
 //  LiveContainerSwiftUI
 //
-//  联网获取封面（Phase 19）：没有自定义 / 客体自带 / 内置原画的游戏，按其
+//  联网获取封面（Phase 19）：由用户在设置页主动发起；没有自定义 / 客体自带封面的游戏，按其
 //  Switch 标题 ID 联网抓一次官方横版主视觉，存宿主 Documents/FetchedCovers/
-//  <bundleId>.jpg，解析链排在内置原画之后、图标兜底之前（见
+//  <bundleId>.jpg，解析链排在客体封面之后、图标兜底之前（见
 //  LCGameLibraryInfo.bannerResolution）。
 //
 //  端点验证结论（2026-11-05 实测，丝之歌 010013C00E930000 / 哈迪斯 II
@@ -138,7 +138,7 @@ final class LCCoverFetchService: @unchecked Sendable {
 
     private let lock = NSLock()
     private var inFlight: Set<String> = []
-    private var waiters: [String: [() -> Void]] = [:]
+    private var waiters: [String: [(Bool) -> Void]] = [:]
 
     private init() {}
 
@@ -170,9 +170,10 @@ final class LCCoverFetchService: @unchecked Sendable {
     /// 去重抓取入口：已有更高优先封面 / 已有抓取缓存 / 负缓存新鲜时直接
     /// 返回；同一游戏在飞时只登记等待者，不重复发请求。标题 ID 允许为空
     /// （见下），为空时跳过 ID 路线、直接走按名搜索兜底。
-    /// completion 仅在本次（或在飞的那次）抓取成功时于主线程回调一次。
-    func ensureFetched(appInfo: LCAppInfo, completion: (() -> Void)? = nil) {
+    /// completion 在主线程回调一次，手动取图失败也向调用者报告。
+    func ensureFetched(appInfo: LCAppInfo, completion: ((Bool) -> Void)? = nil) {
         guard let bundleIdentifier = appInfo.bundleIdentifier() else {
+            DispatchQueue.main.async { completion?(false) }
             return
         }
         // 标题 ID 是从 bundle ID 的点分段里找 16 位十六进制段得来的；
@@ -181,13 +182,16 @@ final class LCCoverFetchService: @unchecked Sendable {
         // 兜底都轮不到（合金装备 4 一案的结构性嫌疑即在此）。
         let titleId = LCGameLibraryInfo.titleId(from: appInfo)
         if LCFetchedCoverStore.exists(forBundleIdentifier: bundleIdentifier) {
+            DispatchQueue.main.async { completion?(true) }
             return
         }
-        // 解析链在抓取层之前已有结果（自定义 / 客体自带 / 内置原画）就不必抓
+        // 解析链在抓取层之前已有结果（自定义 / 客体自带）就不必抓
         if LCGameLibraryInfo.bannerResolution(for: appInfo).image != nil {
+            DispatchQueue.main.async { completion?(true) }
             return
         }
         if negativeCacheIsFresh(for: bundleIdentifier) {
+            DispatchQueue.main.async { completion?(false) }
             return
         }
 
@@ -214,19 +218,16 @@ final class LCCoverFetchService: @unchecked Sendable {
                 saved = (try? LCFetchedCoverStore.save(image, forBundleIdentifier: bundleIdentifier)) != nil
             }
             let callbacks = self.completeFetch(bundleIdentifier: bundleIdentifier, saved: saved)
-            guard saved else {
-                return
-            }
             DispatchQueue.main.async {
-                callbacks.forEach { $0() }
-                self.onCoverUpdated?()
+                callbacks.forEach { $0(saved) }
+                if saved { self.onCoverUpdated?() }
             }
         }
     }
 
     /// 抓取收尾（同步方法）：失败记负缓存，账本（inFlight / waiters）的
     /// 增删都在锁内完成——NSLock 不可直接用于 async 上下文，故收口在此。
-    private func completeFetch(bundleIdentifier: String, saved: Bool) -> [() -> Void] {
+    private func completeFetch(bundleIdentifier: String, saved: Bool) -> [(Bool) -> Void] {
         if !saved {
             recordNegativeAttempt(for: bundleIdentifier)
         }
@@ -237,10 +238,6 @@ final class LCCoverFetchService: @unchecked Sendable {
         return callbacks
     }
 
-    /// 导入完成时的预抓（无单独回调，成功后走全局 onCoverUpdated 刷新库）
-    func prefetch(appInfo: LCAppInfo) {
-        ensureFetched(appInfo: appInfo)
-    }
 
     // MARK: 抓取实现（已验通的任天堂官方链）
 

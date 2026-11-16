@@ -7,10 +7,9 @@
 #include <sys/xattr.h>
 #include "utils.h"
 #include <unistd.h>
-#include "./libproc.h"
+#include "LCCurrentProcessFiles.h"
 #include <sys/stat.h>
 #include <sys/xattr.h>
-#include "./proc_info.h"
 #include <fcntl.h>
 #include <spawn.h>
 #include <dlfcn.h>
@@ -46,6 +45,13 @@ void initDead10ccFix(void) {
 
 
 
+// GameCase modification, 2026-11-17: use SDK F_GETPATH for our own descriptors.
+static void LCCollectOpenFilePath(const char *value, void *context) {
+    NSMutableSet *paths = (__bridge NSMutableSet *)context;
+    NSString *path = [NSFileManager.defaultManager stringWithFileSystemRepresentation:value length:strlen(value)];
+    if (path) [paths addObject:path.stringByStandardizingPath];
+}
+
 @implementation Dead10ccFix
 
 - (void)handleAppDidEnterBackgroundReal {
@@ -60,59 +66,8 @@ void initDead10ccFix(void) {
 // https://gist.github.com/JJTech0130/07e2458df592faad1d2ba72283a0ca50
 - (NSMutableSet *)_lock_lockedFilePathsIgnoring: (NSMutableSet *)ignoring {
     int pid = getpid();
-    int pidinfo_size = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, NULL, 0);
-    if (pidinfo_size <= 0) {
-        // _rbs_process_log with strerr
-        return nil;
-    }
-
-    void *pidinfo = malloc(pidinfo_size);
-    if (!pidinfo) {
-        return nil;
-    }
-    pidinfo_size = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, pidinfo, pidinfo_size);
-    if (pidinfo_size <= 0) {
-        free(pidinfo);
-        return nil;
-    }
-
     NSMutableSet *openFilePaths = [NSMutableSet set];
-
-    if (pidinfo_size >= 8) {
-        uint64_t count = pidinfo_size / sizeof(struct proc_fdinfo);
-        struct proc_fdinfo *fdinfo = (struct proc_fdinfo *)pidinfo;
-        
-        while (count--) {
-            if (fdinfo->proc_fdtype == PROX_FDTYPE_VNODE) {
-                struct vnode_fdinfowithpath vnodeinfo;
-                //memset(&vnodeinfo, 0, 0x200); // TODO: Why not sizeof(vnodeinfo)?
-                int vnodeinfo_size = proc_pidfdinfo(pid, fdinfo->proc_fd, PROC_PIDFDVNODEPATHINFO, &vnodeinfo, sizeof(vnodeinfo));
-                if (vnodeinfo_size == 0) {
-                    // _rbs_process_log with %{public}@ proc_pidfdinfo failed for fd %d with errno %d
-                    continue;
-                } else if (vnodeinfo_size < sizeof(vnodeinfo)) {
-                    // _rbs_process_log with %{public}@ Weird size (%d != %lu) for fd %d
-                    continue;
-                }
-
-                int64_t pathlen = strlen(vnodeinfo.pvip.vip_path);
-                if (pathlen == 0) {
-                    // _rbs_process_log with%{public}@ nodeFDInfo.pvip.vip_path is empty for one fd
-                    continue;
-                }
-
-                NSString *path = [[NSFileManager defaultManager] stringWithFileSystemRepresentation:vnodeinfo.pvip.vip_path length:pathlen];
-                if (path == nil) {
-                    continue;
-                }
-
-                path = [path stringByStandardizingPath];
-                [openFilePaths addObject:path];
-            }
-            fdinfo++;
-        }
-    }
-    free(pidinfo);
+    LCVisitCurrentProcessFilePaths(LCCollectOpenFilePath, (__bridge void *)openFilePaths);
 
     NSMutableSet *lockedFilePaths = [NSMutableSet set];
 
@@ -155,7 +110,8 @@ void initDead10ccFix(void) {
             }
         }
         int (*_sqlite3_lockstate)(char*, int) = dlsym(RTLD_DEFAULT, "_sqlite3_lockstate");
-        int sqlite_lock = _sqlite3_lockstate(path_c, pid);
+        // Some OS versions do not export this private symbol; use the file-lock fallback.
+        int sqlite_lock = _sqlite3_lockstate ? _sqlite3_lockstate(path_c, pid) : -1;
         if (sqlite_lock == 0) {
             // _rbs_process_log with %{public}@ Ignoring unlocked SQLite database: %{public}@
 //            NSLog(@"Ignoring unlocked SQLite database: %@", path);
