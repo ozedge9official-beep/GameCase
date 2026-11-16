@@ -91,6 +91,7 @@ GameCase 站在以下开源工作之上，特此致谢：
 
 ## 链接
 
+- 原项目/开发者：[Tiaoge-tou/GameCase](https://github.com/Tiaoge-tou/GameCase)
 - 本项目：[ozedge9official-beep/GameCase](https://github.com/ozedge9official-beep/GameCase)
 - 下载：[Releases](https://github.com/ozedge9official-beep/GameCase/releases)
 - 上游底座：[LiveContainer/LiveContainer](https://github.com/LiveContainer/LiveContainer)
