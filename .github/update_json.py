@@ -6,10 +6,10 @@ import plistlib
 import re
 from datetime import datetime, timezone
 from urllib.request import Request, urlopen
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_REPOSITORY = "ozedge9official-beep/GameCase"
+DEFAULT_REPOSITORY = "whodaregg/GameCase"
 
 
 def repository():
@@ -41,13 +41,25 @@ def prepare_description(text):
     return re.sub(r"#{1,6}\s?|\*\*|`", "", text)
 
 
-def rehome(value, repo):
+def rehome(value, repo, previous_repo=None):
+    # Infer a renamed repository from the source's own website. Only rewrite
+    # repository URLs; author names and upstream attribution are not aliases.
+    if previous_repo is None:
+        website = value.get("website", "") if isinstance(value, dict) else ""
+        location = urlsplit(website)
+        previous_repo = location.path.strip("/") if location.netloc == "github.com" else DEFAULT_REPOSITORY
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", previous_repo):
+            previous_repo = DEFAULT_REPOSITORY
     if isinstance(value, str):
-        return value.replace("Tiaoge-tou/GameCase", repo).replace(DEFAULT_REPOSITORY, repo)
+        for origin in {previous_repo, DEFAULT_REPOSITORY}:
+            pattern = (r"(https://(?:github\.com/|raw\.githubusercontent\.com/|api\.github\.com/repos/))"
+                       + re.escape(origin) + r"(?=/|[?#\s)\]>]|$)")
+            value = re.sub(pattern, lambda match: match[1] + repo, value)
+        return value
     if isinstance(value, list):
-        return [rehome(item, repo) for item in value]
+        return [rehome(item, repo, previous_repo) for item in value]
     if isinstance(value, dict):
-        return {key: rehome(item, repo) for key, item in value.items()}
+        return {key: rehome(item, repo, previous_repo) for key, item in value.items()}
     return value
 
 

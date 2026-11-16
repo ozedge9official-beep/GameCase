@@ -65,7 +65,7 @@ GameCase 是一个专为 iOS 移植游戏设计的侧载游戏容器。它基于
 
 GameCase 站在以下开源工作之上，特此致谢：
 
-本仓库的 GitHub fork 来源链为 [Tiaoge-tou/GameCase](https://github.com/Tiaoge-tou/GameCase)。本分叉的修改与发布由 ozedge9official-beep/GameCase 维护，不代表原作者的官方发行。
+本仓库的 GitHub fork 来源链为 [Tiaoge-tou/GameCase](https://github.com/Tiaoge-tou/GameCase)。本分叉的修改与发布由 whodaregg/GameCase 维护，不代表原作者的官方发行。
 
 - **[LiveContainer](https://github.com/LiveContainer/LiveContainer)** —— 本项目的底座（在容器内免安装运行 iOS 应用的启动器）。原作者 **Duy Tran（[khanhduytran0](https://github.com/khanhduytran0)）**，主要维护者 **[hugeBlack](https://github.com/hugeBlack)**，以及 LiveContainer 组织与众多贡献者。本项目继承上游代码，保留原有版权与许可声明，并沿用同一主许可证 **GNU AGPL v3.0**（见仓库根目录 `LICENSE`）。上游原 README 全文保留于 [docs/livecontainer-readme.md](docs/livecontainer-readme.md)。
 - **[nxnative](https://github.com/seedds/nxnative)**（作者 **[seedds](https://github.com/seedds)**）—— 客体游戏移植的工具链与生态来源：GameCase 中运行的移植游戏 IPA 由 nxnative 产出（NSO 重写、Horizon HLE、NVN→Metal）。
@@ -77,7 +77,7 @@ GameCase 站在以下开源工作之上，特此致谢：
 
 分发修改版时，应保留原有通知，显著说明修改及相关日期，并提供与所分发安装包相对应、可获得的源码及必要构建资料。发布页应直接指向相应 tag/commit，而非仅链接随时变化的 main。GitHub 自动源码 ZIP 不会展开子模块，不能仅凭其存在就认定完整对应源码已齐备。
 
-本分叉 v1.0.16–v1.0.20 的改动见 [版本记录](docs/releases/)；许可资料核对日期为 2026-11-17。1.0.20 起，设置中的“许可证与源代码”可离线阅读随包许可；Release 同时提供 GameCase-source.tar.gz、LICENSE、THIRD_PARTY_NOTICES.md 与 SHA256SUMS。源码包包含固定依赖、OpenSSL 原始源码与 [构建/安装说明](docs/BUILDING.md)，发布时校验与 IPA 对应。
+本分叉 v1.0.16–v1.0.21 的改动见 [版本记录](docs/releases/)；许可资料核对日期为 2026-11-17。1.0.20 起，设置中的“许可证与源代码”可离线阅读随包许可；Release 同时提供 GameCase-source.tar.gz、LICENSE、THIRD_PARTY_NOTICES.md 与 SHA256SUMS。源码包包含固定依赖、OpenSSL 原始源码与 [构建/安装说明](docs/BUILDING.md)，发布时校验与 IPA 对应。
 
 本次移除了未核实授权的内置游戏封面及 README 游戏截图，保留游戏自带和用户自选图片。处理结果、历史版本边界与预编译依赖的溯源限制见 [审查记录](docs/license-review.md)。代码许可不会自动授予游戏素材权利，补齐资料也不等于无条件的合规保证。
 
@@ -90,8 +90,8 @@ GameCase 站在以下开源工作之上，特此致谢：
 ## 链接
 
 - 原项目/开发者：[Tiaoge-tou/GameCase](https://github.com/Tiaoge-tou/GameCase)
-- 本项目：[ozedge9official-beep/GameCase](https://github.com/ozedge9official-beep/GameCase)
-- 下载：[Releases](https://github.com/ozedge9official-beep/GameCase/releases)
+- 本项目：[whodaregg/GameCase](https://github.com/whodaregg/GameCase)
+- 下载：[Releases](https://github.com/whodaregg/GameCase/releases)
 - 上游底座：[LiveContainer/LiveContainer](https://github.com/LiveContainer/LiveContainer)
 - 上游原 README（归档）：[docs/livecontainer-readme.md](docs/livecontainer-readme.md)
 - 许可证：[LICENSE](LICENSE)

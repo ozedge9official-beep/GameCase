@@ -337,7 +337,7 @@ struct LCSettingsView: View {
             Section {
                 HStack {
                     Image("GitHub")
-                    Button("ozedge9official-beep/GameCase") {
+                    Button("whodaregg/GameCase") {
                         openGameCase()
                     }
                 }
@@ -493,7 +493,7 @@ struct LCSettingsView: View {
     }
     
     func openGameCase() {
-        UIApplication.shared.open(URL(string: "https://github.com/ozedge9official-beep/GameCase")!)
+        UIApplication.shared.open(URL(string: "https://github.com/whodaregg/GameCase")!)
     }
 
 

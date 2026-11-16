@@ -1,6 +1,6 @@
 # 第三方许可与归属资料
 
-GameCase / LiveContainer 的主许可证为 [GNU AGPL v3](LICENSE)。本分叉由 ozedge9official-beep 维护，修改日期和内容见 [版本记录](docs/releases/)。第三方材料保留各自适用的版权与许可；未把全部文件重新许可。
+GameCase / LiveContainer 的主许可证为 [GNU AGPL v3](LICENSE)。本分叉由 whodaregg 维护，修改日期和内容见 [版本记录](docs/releases/)。第三方材料保留各自适用的版权与许可；未把全部文件重新许可。
 
 | 来源 / 材料 | 完整文本或现有通知 | 说明 |
 | --- | --- | --- |

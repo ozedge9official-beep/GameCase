@@ -4,7 +4,7 @@
 
 ```text
 修改版声明
-本版由 ozedge9official-beep/GameCase 维护，基于既有 GameCase / LiveContainer 代码修改。
+本版由 whodaregg/GameCase 维护，基于既有 GameCase / LiveContainer 代码修改。
 本版修改日期：YYYY-MM-DD；版本：vX.Y.Z。
 具体改动、构建和测试范围见本版本更新记录。本分叉不代表上游作者的官方发布。
 
