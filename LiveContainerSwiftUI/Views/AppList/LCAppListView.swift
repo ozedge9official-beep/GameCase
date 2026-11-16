@@ -720,7 +720,9 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
         let payloadPath = extraction.appendingPathComponent("Payload", isDirectory: true)
 
         // decompress
-        guard await decompress(url.path, extraction.path, decompressProgress) == 0 else {
+        let extractionResult = await decompress(url.path, extraction.path, decompressProgress)
+        if extractionResult == 2 { throw LCStorageError.archiveSpace }
+        guard extractionResult == 0 else {
             throw "lc.appList.urlFileIsNotIpaError".loc
         }
 

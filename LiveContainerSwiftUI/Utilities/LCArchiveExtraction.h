@@ -9,6 +9,36 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#ifdef __APPLE__
+#include <sys/mount.h>
+#else
+#include <sys/statvfs.h>
+#endif
+
+// Return code 2 means capacity was known to be insufficient before any writes.
+static int LCArchiveHasSpace(const char *root, int64_t total) {
+    uint64_t available;
+#ifdef LC_ARCHIVE_TEST_AVAILABLE_BYTES
+    (void)root;
+    available = LC_ARCHIVE_TEST_AVAILABLE_BYTES;
+#else
+#ifdef __APPLE__
+    struct statfs volume;
+    if (statfs(root, &volume)) return 1;
+    uint64_t blocks = volume.f_bavail, blockSize = volume.f_bsize;
+#else
+    struct statvfs volume;
+    if (statvfs(root, &volume)) return 1;
+    uint64_t blocks = volume.f_bavail, blockSize = volume.f_frsize;
+#endif
+    if (!blockSize || blocks > UINT64_MAX / blockSize) return 1;
+    available = blocks * blockSize;
+#endif
+    uint64_t bytes = (uint64_t)total;
+    uint64_t reserve = bytes / 100;
+    if (reserve < (4u << 20)) reserve = 4u << 20;
+    return bytes <= UINT64_MAX - reserve && available >= bytes + reserve;
+}
 
 // Shared by the iOS wrapper and the portable regression tests.
 typedef void (*LCArchiveProgress)(void *context, int64_t total, int64_t completed);
@@ -133,6 +163,7 @@ static int LCExtractArchive(const char *source, const char *destination,
             archive_write_free(writer);
         }
         if (failed) return 1;
+        if (pass == 0 && !LCArchiveHasSpace(root, total)) return 2;
         if (report) report(context, total, completed);
     }
     return 0;
