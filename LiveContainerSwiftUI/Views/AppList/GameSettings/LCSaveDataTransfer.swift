@@ -79,6 +79,7 @@ enum LCSaveDataStore {
                 throw LCSaveDataError.archiveFailed
             }
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+            try LCStorageCapacity.check(sizes: [Int64(data.count)], at: url.deletingLastPathComponent())
             try data.write(to: url, options: .atomic)
             return url
         }.value
@@ -112,6 +113,7 @@ enum LCSaveDataStore {
                 let extracted = staging.appendingPathComponent("extracted", isDirectory: true)
                 try fm.createDirectory(at: extracted, withIntermediateDirectories: true)
                 let rc = extract(source.path, extracted.path, Progress(totalUnitCount: 100))
+                if rc == 2 { throw LCStorageError.archiveSpace }
                 guard rc == 0 else {
                     throw LCSaveDataError.extractFailed(rc)
                 }
@@ -124,8 +126,15 @@ enum LCSaveDataStore {
                 throw LCSaveDataError.invalidContent
             }
 
+            let oldSnapshot = try LCFileTree.scan(saveDir)
+            let incomingSize: Int64
+            if let contentSnapshot { incomingSize = contentSnapshot.totalBytes }
+            else if let singleFile, let size = try singleFile.resourceValues(forKeys: [.fileSizeKey]).fileSize { incomingSize = Int64(size) }
+            else { throw LCSaveDataError.invalidContent }
+            try LCStorageCapacity.check(sizes: [oldSnapshot.totalBytes, incomingSize], at: documents)
+
             // 2) 备份当前存档（硬前置：失败即中止，save 原样不动）
-            let backup = try await makeBackup(of: saveDir, in: documents, fm: fm)
+            let backup = try await makeBackup(of: saveDir, in: documents, fm: fm, snapshot: oldSnapshot)
 
             // 3) 落地
             if let file = singleFile {
@@ -188,35 +197,8 @@ enum LCSaveDataStore {
     /// 把当前 save 整夹备份到 Documents/save-backups/save-<时间戳>/；
     /// save 内无任何文件时跳过（无可备份），返回 nil。逐文件分块拷贝
     /// 并校验大小，任一失败抛错（调用方据此中止导入）。
-    static func makeBackup(of saveDir: URL, in documents: URL, fm: FileManager) async throws -> URL? {
-        let snapshot = try LCFileTree.scan(saveDir, fileManager: fm)
-        guard !snapshot.files.isEmpty || !snapshot.directories.isEmpty else { return nil }
-        let backupsRoot = documents.appendingPathComponent("save-backups", isDirectory: true)
-        try fm.createDirectory(at: backupsRoot, withIntermediateDirectories: true)
-        let stamp = stamp()
-        var backupDir = backupsRoot.appendingPathComponent("save-\(stamp)", isDirectory: true)
-        var suffix = 2
-        while fm.fileExists(atPath: backupDir.path) {
-            backupDir = backupsRoot.appendingPathComponent("save-\(stamp)-\(suffix)", isDirectory: true)
-            suffix += 1
-        }
-        let pending = backupsRoot.appendingPathComponent(".pending-\(UUID().uuidString)", isDirectory: true)
-        try fm.createDirectory(at: pending, withIntermediateDirectories: false)
-        defer { try? fm.removeItem(at: pending) }
-        for directory in snapshot.directories {
-            try fm.createDirectory(at: pending.appendingPathComponent(directory), withIntermediateDirectories: true)
-        }
-        for file in snapshot.files {
-            let dest = pending.appendingPathComponent(file.relativePath)
-            try fm.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true)
-            let written = try await LCDatapackImportView.chunkedCopyFile(from: file.url, to: dest, isCancelled: { false }) { _ in }
-            guard written == file.size && written == LCDatapackImportView.fileSize(file.url) else {
-                throw CocoaError(.fileWriteUnknown)
-            }
-        }
-        // Only complete backups receive a user-facing name.
-        try fm.moveItem(at: pending, to: backupDir)
-        return backupDir
+    static func makeBackup(of saveDir: URL, in documents: URL, fm: FileManager, snapshot: LCFileTree.Snapshot? = nil) async throws -> URL? {
+        try await LCSaveBackupStore.create(of: saveDir, in: documents, fm: fm, snapshot: snapshot)
     }
 }
 
@@ -226,6 +208,12 @@ struct LCSaveDataSectionView: View {
     let app: LCAppModel
 
     @State private var sizeText: String?
+    @State private var sizeTask: Task<Void, Never>?
+    @State private var backupContext: BackupContext?
+    private struct BackupContext: Identifiable {
+        let documents: URL
+        var id: URL { documents }
+    }
     @State private var busy = false
     @State private var picking = false
     @State private var pendingSource: URL?
@@ -257,9 +245,14 @@ struct LCSaveDataSectionView: View {
     })
 
     var body: some View {
-        if LCSaveDataStore.saveDirectoryURL(for: app) != nil {
+        if let documents = LCSaveDataStore.documentsURL(for: app),
+           LCSaveDataStore.saveDirectoryURL(for: app) != nil || FileManager.default.fileExists(atPath: LCSaveBackupStore.root(in: documents).path) {
             section
                 .onAppear { refreshSize() }
+                .onDisappear { sizeTask?.cancel() }
+                .sheet(item: $backupContext, onDismiss: { refreshSize() }) { context in
+                    LCBackupManagementView(documents: context.documents)
+                }
                 .fileImporter(isPresented: $picking, allowedContentTypes: [.item, .folder], allowsMultipleSelection: false) { result in
                     if case .success(let urls) = result, let url = urls.first {
                         pendingSource = url
@@ -310,6 +303,7 @@ struct LCSaveDataSectionView: View {
                     row(label: "lc.save.export".loc, value: sizeText)
                 }
                 .buttonStyle(.plain)
+                .disabled(LCSaveDataStore.saveDirectoryURL(for: app) == nil)
                 Rectangle()
                     .fill(Color.primary.opacity(0.06))
                     .frame(height: 1)
@@ -318,6 +312,12 @@ struct LCSaveDataSectionView: View {
                 } label: {
                     row(label: "lc.save.import".loc, value: nil)
                 }
+                .buttonStyle(.plain)
+                .disabled(LCSaveDataStore.saveDirectoryURL(for: app) == nil)
+                Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 1)
+                Button {
+                    backupContext = LCSaveDataStore.documentsURL(for: app).map { BackupContext(documents: $0) }
+                } label: { row(label: "lc.backups.title".loc, value: nil) }
                 .buttonStyle(.plain)
                 if busy {
                     HStack(spacing: 8) {
@@ -361,11 +361,16 @@ struct LCSaveDataSectionView: View {
     }
 
     private func refreshSize() {
+        sizeTask?.cancel()
+        sizeText = nil
         guard let saveDir = LCSaveDataStore.saveDirectoryURL(for: app) else {
             return
         }
-        let bytes = LCDatapackImportView.treeSize(saveDir)
-        sizeText = bytes > 0 ? LCDatapackImportView.sizeText(bytes) : nil
+        sizeTask = Task { @MainActor in
+            let bytes = await Task.detached { try? LCFileTree.scan(saveDir).totalBytes }.value
+            guard !Task.isCancelled else { return }
+            sizeText = bytes.map { LCDatapackImportView.sizeText($0) }
+        }
     }
 
     private func runExport() {

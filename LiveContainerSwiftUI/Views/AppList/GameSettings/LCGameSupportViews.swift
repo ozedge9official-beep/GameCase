@@ -61,6 +61,13 @@ struct LCGameLogView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var loaded: (text: String, truncated: Bool)?
     @State private var didLoad = false
+    @State private var exporting = false
+    @State private var report: DiagnosticFile?
+    @State private var exportError: String?
+    private struct DiagnosticFile: Identifiable {
+        let id = UUID()
+        let url: URL
+    }
 
     private var hasText: Bool {
         !(loaded?.text.isEmpty ?? true)
@@ -91,11 +98,18 @@ struct LCGameLogView: View {
             .navigationTitle(app.displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("lc.diagnostics.export".loc) { exportDiagnostics() }.disabled(exporting)
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("完成") { dismiss() }
                 }
             }
         }
+        .sheet(item: $report) { item in ActivityViewController(activityItems: [item.url]) }
+        .alert("lc.diagnostics.export".loc, isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
+            Button("lc.common.ok".loc, role: .cancel) {}
+        } message: { Text(exportError ?? "") }
         .onAppear {
             guard !didLoad else {
                 return
@@ -106,6 +120,31 @@ struct LCGameLogView: View {
             }
         }
     }
+    private func exportDiagnostics() {
+        exporting = true
+        let documents = LCSaveDataStore.documentsURL(for: app)
+        let bundle = app.appInfo.bundlePath().map { URL(fileURLWithPath: $0) }
+        let metadata = [
+            "gamecase_version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown",
+            "game_identifier": app.bundleIdentifier,
+            "game_version": app.appInfo.version() ?? "unknown",
+            "os_version": UIDevice.current.systemVersion
+        ]
+        Task { @MainActor in
+            do {
+                let url = try await Task.detached {
+                    let data = try LCGameDiagnostics.build(documents: documents, bundle: bundle, metadata: metadata)
+                    let url = FileManager.default.temporaryDirectory.appendingPathComponent("GameCase-diagnostics-\(UUID().uuidString).json")
+                    try LCStorageCapacity.check(sizes: [Int64(data.count)], at: url)
+                    try data.write(to: url, options: .atomic)
+                    return url
+                }.value
+                report = DiagnosticFile(url: url)
+            } catch { exportError = error.localizedDescription }
+            exporting = false
+        }
+    }
+
 }
 
 // MARK: - 帮助内容（卡与页共用）

@@ -456,6 +456,7 @@ struct LCDatapackImportView: View {
                 guard expected > 0 else {
                     throw CocoaError(.fileNoSuchFile)
                 }
+                try LCStorageCapacity.check(sizes: [expected], at: documents)
                 let written = try await Self.chunkedCopyFile(from: source, to: tmp, isCancelled: { box.cancelled }) { done in
                     await MainActor.run {
                         copiedBytes = done
@@ -663,6 +664,7 @@ struct LCDatapackImportView: View {
                 }
                 // 定格为 let 再进各闭包捕获（var 捕获在并发闭包里会触发 Swift 6 模式诊断）
                 let total = totalAcc
+                try LCStorageCapacity.check(sizes: [total], at: documents)
                 await MainActor.run { totalBytes = total }
 
                 var base: Int64 = 0

@@ -51,11 +51,12 @@ enum LCDatapackImportView {
 enum LCPath { static let docPath = URL(fileURLWithPath: CommandLine.arguments[1]) }
 '''
     (build / "Support.swift").write_text(support + cloud + prefs + saves)
-    (build / "main.swift").write_text((ROOT / "tests/storage_regressions.swift").read_text() + "\n" + (ROOT / "tests/reliability_regressions.swift").read_text())
+    (build / "main.swift").write_text((ROOT / "tests/storage_regressions.swift").read_text() + "\n" + (ROOT / "tests/reliability_regressions.swift").read_text() + "\n" + (ROOT / "tests/backup_regressions.swift").read_text())
     binary = build / "storage-tests"
     subprocess.run(["swiftc", "-swift-version", "5", str(build / "Support.swift"),
                     str(ROOT / "LiveContainerSwiftUI/Utilities/LCFileReplacement.swift"),
                     *[str(ROOT / "LiveContainerSwiftUI/Utilities" / (name + ".swift")) for name in
-                      ["LCRecoverableFileWriter", "LCFileTree", "LCFileCopy", "LCFileValueCache", "LCAppInstallTransaction"]],
+                      ["LCRecoverableFileWriter", "LCFileTree", "LCFileCopy", "LCFileValueCache", "LCAppInstallTransaction", "LCStorageCapacity", "LCSaveBackupStore", "LCGameDiagnostics"]],
+                    str(ROOT / "LiveContainerSwiftUI/Views/AppList/GameSettings/LCGameCheatStore.swift"),
                     str(build / "main.swift"), "-o", str(binary)], check=True)
     subprocess.run([str(binary), str(build / "data")], check=True)

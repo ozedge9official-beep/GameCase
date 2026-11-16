@@ -268,6 +268,7 @@ enum LCGameMods {
             let snapshot = try LCFileTree.scan(source)
             let files = snapshot.files
             let total = snapshot.totalBytes
+            try LCStorageCapacity.check(sizes: [total], at: mods)
             for directory in snapshot.directories {
                 try fm.createDirectory(at: staging.appendingPathComponent(directory), withIntermediateDirectories: true)
             }

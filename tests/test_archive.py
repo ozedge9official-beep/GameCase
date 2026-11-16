@@ -19,6 +19,10 @@ class ArchiveTests(unittest.TestCase):
         library = "-larchive" if sys.platform == "darwin" else "-Wl,-l:libarchive.so.13"
         subprocess.run(["cc", "-Wall", "-Wextra", "-Werror", "-I", str(ROOT / "LiveContainerSwiftUI/Utilities"),
                         str(ROOT / "tests/archive_runner.c"), library, "-o", str(cls.runner)], check=True)
+        cls.full_runner = Path(cls.build.name) / "extract-full"
+        subprocess.run(["cc", "-Wall", "-Wextra", "-Werror", "-DLC_ARCHIVE_TEST_AVAILABLE_BYTES=0",
+                        "-I", str(ROOT / "LiveContainerSwiftUI/Utilities"), str(ROOT / "tests/archive_runner.c"),
+                        library, "-o", str(cls.full_runner)], check=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -41,6 +45,24 @@ class ArchiveTests(unittest.TestCase):
     def test_normal_zip_and_unicode(self):
         self.assertEqual(self.extract_zip([("save/存档.dat", b"complete")]), 0)
         self.assertEqual((self.destination / "save/存档.dat").read_bytes(), b"complete")
+
+    def test_space_preflight_prevents_any_writes(self):
+        source = self.root / "input.zip"
+        with zipfile.ZipFile(source, "w") as archive:
+            archive.writestr("save.dat", b"new")
+        (self.destination / "keep").write_bytes(b"original")
+        result = subprocess.run([str(self.full_runner), str(source), str(self.destination)], capture_output=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual([p.name for p in self.destination.iterdir()], ["keep"])
+        self.assertEqual((self.destination / "keep").read_bytes(), b"original")
+
+    def test_archive_validation_precedes_capacity_error(self):
+        source = self.root / "input.zip"
+        with zipfile.ZipFile(source, "w") as archive:
+            archive.writestr("../outside", b"bad")
+        result = subprocess.run([str(self.full_runner), str(source), str(self.destination)], capture_output=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse((self.root / "outside").exists())
 
     def test_reject_parent_traversal_before_writing_any_entry(self):
         self.assertNotEqual(self.extract_zip([("good", b"ok"), ("../outside", b"bad")]), 0)
