@@ -268,7 +268,10 @@ enum LCGameCheats {
         guard !entry.isMaster else { return file }
         let parsed = parse(text: try decode(readData(at: file.fileURL)))
         let current = parsed.entries
-        guard current.contains(where: { $0.key == entry.key && $0.words == entry.words && $0.ordinal == entry.ordinal }) else {
+        guard current.contains(where: {
+            $0.key == entry.key && $0.words == entry.words && $0.ordinal == entry.ordinal &&
+            $0.isMaster == entry.isMaster && $0.invalidLines == entry.invalidLines
+        }) else {
             throw LCGameCheatError.staleFile
         }
         // Read current state rather than a captured SwiftUI snapshot; retain
