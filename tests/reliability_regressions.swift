@@ -82,6 +82,24 @@ do {
 } catch { reliabilityChecks += 1 }
 let backupNames = try fm.contentsOfDirectory(atPath: backupDocuments.appendingPathComponent("save-backups").path)
 verify(backupNames.count == 1 && !backupNames.contains(where: { $0.hasPrefix(".pending-") }), "only successful backup receives final name")
+let gameSave = containers[0].containerURL.appendingPathComponent("Documents/save")
+try file(gameSave.appendingPathComponent("slot.dat"), "old save")
+let importedSlot = root.appendingPathComponent("incoming-single/slot.dat")
+try file(importedSlot, "new save")
+let beforeSingle = try await LCSaveDataStore.importSave(from: importedSlot, for: app)!
+try verify(text(gameSave.appendingPathComponent("slot.dat")) == "new save" && text(beforeSingle.appendingPathComponent("slot.dat")) == "old save", "single-file save import retains complete prior backup")
+let importedFolder = root.appendingPathComponent("incoming-save")
+try file(importedFolder.appendingPathComponent("nested/new-slot"), "folder save")
+try fm.createDirectory(at: importedFolder.appendingPathComponent("empty"), withIntermediateDirectories: true)
+_ = try await LCSaveDataStore.importSave(from: importedFolder, for: app)
+try verify(text(gameSave.appendingPathComponent("nested/new-slot")) == "folder save", "complete save folder import")
+verify(fm.fileExists(atPath: gameSave.appendingPathComponent("empty").path) && !fm.fileExists(atPath: gameSave.appendingPathComponent("slot.dat").path), "folder import keeps empty directories and replaces the complete set")
+try fm.createSymbolicLink(at: importedFolder.appendingPathComponent("bad-link"), withDestinationURL: tracked)
+do {
+    _ = try await LCSaveDataStore.importSave(from: importedFolder, for: app)
+    preconditionFailure("unsupported source content must abort import")
+} catch { reliabilityChecks += 1 }
+try verify(text(gameSave.appendingPathComponent("nested/new-slot")) == "folder save", "failed source scan leaves current save unchanged")
 
 let modRecovery = root.appendingPathComponent("mod-recovery")
 let modDestination = root.appendingPathComponent("mods")

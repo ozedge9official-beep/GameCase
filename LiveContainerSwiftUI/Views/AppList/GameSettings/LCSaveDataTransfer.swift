@@ -131,8 +131,11 @@ enum LCSaveDataStore {
             if let file = singleFile {
                 let dest = saveDir.appendingPathComponent(file.lastPathComponent)
                 let tmp = saveDir.appendingPathComponent(file.lastPathComponent + ".importing")
+                guard let expected = try file.resourceValues(forKeys: [.fileSizeKey]).fileSize else {
+                    throw CocoaError(.fileReadUnknown)
+                }
                 let written = try await LCDatapackImportView.chunkedCopyFile(from: file, to: tmp, isCancelled: { false }) { _ in }
-                guard written == file.size && written == LCDatapackImportView.fileSize(file.url) else {
+                guard written == Int64(expected) && written == LCDatapackImportView.fileSize(file) else {
                     try? fm.removeItem(at: tmp)
                     throw CocoaError(.fileWriteUnknown)
                 }
