@@ -1,0 +1,98 @@
+name: Publish Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Stable version tag, for example v1.0.16
+        required: true
+        type: string
+      build_run_id:
+        description: Successful build workflow run containing GameCase.ipa
+        required: true
+        type: string
+      target_sha:
+        description: Tested source commit to tag
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: publish-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      BUILD_RUN_ID: ${{ inputs.build_run_id }}
+      TARGET_SHA: ${{ inputs.target_sha }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate version and build provenance
+        run: |
+          python3 - <<'PY'
+          import os, re, json, subprocess
+          def api(path):
+              return json.loads(subprocess.check_output(['gh', 'api', path]))
+          tag, run_id, target = (os.environ[k] for k in ['TAG', 'BUILD_RUN_ID', 'TARGET_SHA'])
+          assert re.fullmatch(r'v\d+\.\d+\.\d+', tag), 'Invalid stable tag'
+          assert run_id.isdecimal() and re.fullmatch(r'[0-9a-f]{40}', target), 'Invalid provenance input'
+          repo = os.environ['GITHUB_REPOSITORY']
+          run = api(f'repos/{repo}/actions/runs/{run_id}')
+          assert run['conclusion'] == 'success', 'Build must have passed'
+          assert run['head_repository']['full_name'] == repo, 'Unexpected artifact repository'
+          built = api(f'repos/{repo}/git/commits/{run["head_sha"]}')
+          tested = api(f'repos/{repo}/git/commits/{target}')
+          assert built['tree']['sha'] == tested['tree']['sha'], 'Artifact source does not match release commit'
+          assert api(f'repos/{repo}/commits/{target}')['sha'] == target
+          print('Validated build provenance for', tag, target)
+          PY
+      - uses: actions/download-artifact@v8
+        with:
+          name: GameCase.ipa
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate IPA and create checksum
+        run: |
+          python3 - <<'PY'
+          import hashlib, os, pathlib, plistlib, zipfile
+          path = pathlib.Path('GameCase.ipa')
+          with zipfile.ZipFile(path) as z:
+              assert z.testzip() is None, 'Corrupt IPA'
+              info = plistlib.loads(z.read('Payload/LiveContainer.app/Info.plist'))
+              assert info['CFBundleShortVersionString'] == os.environ['TAG'][1:]
+              assert info['CFBundleVersion'] == os.environ['TAG'][1:]
+              assert info['CFBundleIdentifier'] == 'com.tiaoge.gamecase'
+              assert not any('SideStoreApp.framework' in n or 'SideStoreSupport.framework' in n for n in z.namelist())
+          pathlib.Path('SHA256SUMS').write_text(hashlib.sha256(path.read_bytes()).hexdigest() + '  GameCase.ipa\n')
+          assert pathlib.Path('docs/releases/' + os.environ['TAG'] + '.md').is_file(), 'Missing release notes'
+          PY
+      - name: Prepare complete draft release
+        run: |
+          gh release create "$TAG" GameCase.ipa SHA256SUMS --target "$TARGET_SHA" --title "GameCase ${TAG#v}" --notes-file "docs/releases/$TAG.md" --draft
+          gh api "repos/$GITHUB_REPOSITORY/releases" > releases.json
+      - name: Generate source from the uploaded IPA
+        run: |
+          python3 - <<'PY'
+          import importlib.util, json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location('source', '.github/update_json.py')
+          source = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(source)
+          release = next(r for r in json.loads(Path('releases.json').read_text()) if r['tag_name'] == os.environ['TAG'])
+          # Drafts have no publication timestamp yet; prepare the feed immediately before publication.
+          release['published_at'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+          seed = json.loads(Path('.github/apps.json').read_text())
+          data = source.build_source(seed, os.environ['GITHUB_REPOSITORY'], release, os.environ['TAG'][1:])
+          source.write_source(Path('.github/apps.json'), data)
+          PY
+          gh release upload "$TAG" .github/apps.json
+      - name: Publish stable release
+        run: gh release edit "$TAG" --draft=false --latest
