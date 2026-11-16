@@ -337,8 +337,8 @@ enum LCGameMods {
 
     /// 按容器当前 mods / cheats 现状、同一次维护里顺序维护其
     /// Documents/env.txt 的三行：先 DM_ROMFS_OVERLAY（mods 现
-    /// 算，无可用 mod 删行）、次 DM_CHEATS（cheats 夹内有文件名
-    /// 合规的 .txt 才写 cheats、否则删行，判据见 LCGameCheats）、
+    /// 算，无可用 mod 删行）、次 DM_CHEATS（总开关关闭时指向不可
+    /// 加载路径，否则按 cheats 文件现状维护，判据见 LCGameCheats）、
     /// 末 DM_LAUNCHER（按逐游戏开关，见下）。三行共用 maintainEnvLine 这
     /// 一个写者，他行逐字保留。同一漏斗里另有两件不经 env 的事：
     /// 删除旧云存档通道残留的 DM_SAVE_SYNC 行、把云存档书签同步
