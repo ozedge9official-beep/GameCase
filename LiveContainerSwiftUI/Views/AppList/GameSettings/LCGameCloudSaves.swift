@@ -62,11 +62,9 @@
 //  录的书签 Data 写进客体偏好 cloudSavesBookmark 键；已关闭 / 书
 //  签失效：删掉这个键（= 引擎的 dm_clear_cloud_saves）。「关闭」
 //  只置 off 标记（记录里的书签保留，重新开启不用再选夹）；「移
-//  除」删整份记录——但已移除（无记录）时启动维护不碰客体键：没
-//  有 GC 记录 = 这款游戏的云存档不归 GC 管，玩家可能在客体自带
-//  启动器里自选过文件夹，那个键是他的配置，GC 不删。管理动作只
-//  动记录本身，一切效果经下次启动维护生效，与 Mod / 金手指同一
-//  模式。「设置下次启动生效」的设置页口径不变。
+//  除」先保存关闭标记并清理所有已知客体容器的书签；全部成功后才删
+//  记录，失败保留关闭标记以便下次启动重试。无 GC 记录时不碰客体键，
+//  保留玩家在客体自带启动器内自行选择的配置。
 //
 
 import SwiftUI
@@ -131,26 +129,25 @@ enum LCGameCloudSaves {
         return try? PropertyListDecoder().decode(Record.self, from: data)
     }
 
-    private static func save(_ record: Record, forBundleIdentifier bundleIdentifier: String) {
-        let fm = FileManager.default
-        try? fm.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-        guard let data = try? PropertyListEncoder().encode(record) else {
-            return
-        }
-        // 临时文件 + 替换，避免写一半被读到（与 LCCustomCoverStore.save 同法）
-        let target = fileURL(forBundleIdentifier: bundleIdentifier)
-        let tmp = directoryURL.appendingPathComponent(".\(bundleIdentifier).tmp.plist")
-        guard (try? data.write(to: tmp, options: .atomic)) != nil else {
-            return
-        }
-        if fm.fileExists(atPath: target.path) {
-            try? fm.removeItem(at: target)
-        }
-        try? fm.moveItem(at: tmp, to: target)
+    private static func save(_ record: Record, forBundleIdentifier bundleIdentifier: String) throws {
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        let data = try PropertyListEncoder().encode(record)
+        try data.write(to: fileURL(forBundleIdentifier: bundleIdentifier), options: .atomic)
     }
 
-    static func removeRecord(forBundleIdentifier bundleIdentifier: String) {
-        try? FileManager.default.removeItem(at: fileURL(forBundleIdentifier: bundleIdentifier))
+    static func removeRecord(for app: LCAppModel) throws {
+        guard var record = record(forBundleIdentifier: app.bundleIdentifier) else { return }
+        record.isOff = true
+        try save(record, forBundleIdentifier: app.bundleIdentifier)
+        // Clear all known containers now, including the one that last ran.
+        // Never discard ownership if a guest preference write fails.
+        for container in app.appInfo.containers {
+            let prefs = LCGamePrefs(container: container, bundleIdentifier: app.bundleIdentifier)
+            guard prefs.setRawValue(nil, forKey: guestBookmarkKey) else {
+                throw CocoaError(.fileWriteUnknown)
+            }
+        }
+        try FileManager.default.removeItem(at: fileURL(forBundleIdentifier: app.bundleIdentifier))
     }
 
     // MARK: 书签（照 NX2 BookmarkStore / 引擎 CloudSaves.m 的 fresh 口径）
@@ -200,7 +197,7 @@ enum LCGameCloudSaves {
         if stale.boolValue, let fresh = freshBookmark(for: url) {
             var updated = record
             updated.bookmark = fresh
-            save(updated, forBundleIdentifier: bundleIdentifier)
+            try? save(updated, forBundleIdentifier: bundleIdentifier)
         }
         return url
     }
@@ -213,18 +210,22 @@ enum LCGameCloudSaves {
         guard let bookmark = freshBookmark(for: url) else {
             return false
         }
-        save(Record(bookmark: bookmark, folderName: url.lastPathComponent, isOff: false),
-             forBundleIdentifier: bundleIdentifier)
-        return true
+        do {
+            try save(Record(bookmark: bookmark, folderName: url.lastPathComponent, isOff: false),
+                     forBundleIdentifier: bundleIdentifier)
+            return true
+        } catch {
+            return false
+        }
     }
 
     /// 关闭 / 重新开启：只翻 off 标记，书签与名字保留
-    static func setOff(_ off: Bool, forBundleIdentifier bundleIdentifier: String) {
+    static func setOff(_ off: Bool, forBundleIdentifier bundleIdentifier: String) throws {
         guard var record = record(forBundleIdentifier: bundleIdentifier) else {
             return
         }
         record.isOff = off
-        save(record, forBundleIdentifier: bundleIdentifier)
+        try save(record, forBundleIdentifier: bundleIdentifier)
     }
 
     /// 当前状态：无记录 / 关 / 开 / 失效。解析只为判定——授予的持有
@@ -373,8 +374,7 @@ struct LCGameCloudSavesSectionView: View {
             Menu {
                 Button("lc.cloud.changeFolder".loc) { picking = true }
                 Button("lc.cloud.turnOff".loc) {
-                    LCGameCloudSaves.setOff(true, forBundleIdentifier: app.bundleIdentifier)
-                    reload()
+                    updateConfiguration { try LCGameCloudSaves.setOff(true, forBundleIdentifier: app.bundleIdentifier) }
                 }
             } label: {
                 row(value: folderName, valueColor: Self.cream)
@@ -382,13 +382,11 @@ struct LCGameCloudSavesSectionView: View {
         case .off(let folderName):
             Menu {
                 Button("lc.cloud.turnOn".loc) {
-                    LCGameCloudSaves.setOff(false, forBundleIdentifier: app.bundleIdentifier)
-                    reload()
+                    updateConfiguration { try LCGameCloudSaves.setOff(false, forBundleIdentifier: app.bundleIdentifier) }
                 }
                 Button("lc.cloud.changeFolder".loc) { picking = true }
                 Button("lc.cloud.remove".loc, role: .destructive) {
-                    LCGameCloudSaves.removeRecord(forBundleIdentifier: app.bundleIdentifier)
-                    reload()
+                    updateConfiguration { try LCGameCloudSaves.removeRecord(for: app) }
                 }
             } label: {
                 row(value: "lc.cloud.off".loc, valueColor: .primary.opacity(0.5), detail: folderName)
@@ -397,8 +395,7 @@ struct LCGameCloudSavesSectionView: View {
             Menu {
                 Button("lc.cloud.repick".loc) { picking = true }
                 Button("lc.cloud.remove".loc, role: .destructive) {
-                    LCGameCloudSaves.removeRecord(forBundleIdentifier: app.bundleIdentifier)
-                    reload()
+                    updateConfiguration { try LCGameCloudSaves.removeRecord(for: app) }
                 }
             } label: {
                 row(value: "lc.cloud.stale".loc, valueColor: Self.attention)
@@ -432,6 +429,17 @@ struct LCGameCloudSavesSectionView: View {
         }
         .frame(minHeight: 48)
         .contentShape(Rectangle())
+    }
+
+    private func updateConfiguration(_ action: () throws -> Void) {
+        do {
+            try action()
+            reload()
+        } catch {
+            reload()
+            resultTitle = "lc.cloud.section".loc
+            resultMessage = error.localizedDescription
+        }
     }
 
     private func reload() {

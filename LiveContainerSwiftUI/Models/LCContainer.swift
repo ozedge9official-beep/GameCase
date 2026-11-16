@@ -334,12 +334,7 @@ class LCContainer : ObservableObject, Hashable {
 extension LCAppInfo {
     var containers : [LCContainer] {
         get {
-            if self is BuiltInSideStoreAppInfo {
-                let container = LCContainer(folderName: "", name: "SideStore", isShared: false)
-                container.resolvedContainerURL = LCPath.docPath.appendingPathComponent("SideStore")
-                return [container]
-            }
-            
+
             var upgrade = false
             // upgrade：只有 LCDataUUID、没有容器名单的旧形态记录（上游老
             // 版本形态，覆盖安装会原样继承）在此收敛出默认容器。

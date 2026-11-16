@@ -372,7 +372,7 @@ class LCAppModel: ObservableObject, Hashable {
         // 级维护进该容器 Documents/env.txt（客体 boot 时自读），与
         // 下方游玩时长打戳同处漏斗——已越过全部早退分支、派发在
         // 即，每次启动现算，玩家在文件 App 增删 mod / 金手指后下次
-        // 启动即生效。override 启动（如内置 SideStore）不是 dm 客
+        // 启动即生效。override 启动不是 dm 客
         // 体，不适用。维护失败静默，绝不挡启动。见 LCGameMods.swift
         // / LCGameCheats.swift。
         if bundleIdOverride == nil {
@@ -384,11 +384,8 @@ class LCAppModel: ObservableObject, Hashable {
         // 早退分支（已运行、多任务窗口已存在、转交其他 LC 副本——那些情形
         // 要么本局已在计、要么由接手副本在它自己的漏斗打戳），启动派发只剩
         // 下方 JIT / 经典模式两条路，只在这里打一次不会重复计。
-        // 内置 SideStore 不计游玩时长：它不是游戏，且其会话永远不会被
-        // 正常结清（无快捷栏回库动作），从源头不产生伪会话。
-        if bundleIdOverride != "builtinSideStore" {
-            LCPlayStats.beginSession(bundleId: bundleIdOverride ?? bundleIdentifier)
-        }
+
+        LCPlayStats.beginSession(bundleId: bundleIdOverride ?? bundleIdentifier)
 
         var jitNeeded = appInfo.isJITNeeded || appInfo.is32bit
         if let forceJIT {

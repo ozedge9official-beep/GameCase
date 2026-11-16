@@ -97,10 +97,6 @@ struct LCTabView: View {
                 sharedModel.selectedTab = .apps
                 break
             }
-            if url.scheme?.lowercased() == "sidestore" {
-                sharedModel.selectedTab = .apps
-                break
-            }
             
             guard let host = url.host?.lowercased() else {
                 return

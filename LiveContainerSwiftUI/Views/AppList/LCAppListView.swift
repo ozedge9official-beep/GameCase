@@ -611,8 +611,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
         }
         didAppear = true
     }
-    
-    
+
     func openWebView(urlString: String) async {
         guard var urlToOpen = URLComponents(string: urlString), urlToOpen.url != nil else {
             errorInfo = "lc.appList.urlInvalidError".loc
@@ -647,7 +646,6 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                     }
                 }
             }
-
 
             guard let appToLaunch = appToLaunch else {
                 errorInfo = "lc.appList.schemeCannotOpenError %@".localizeWithFormat(urlToOpen.scheme!)
@@ -687,8 +685,6 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
         }
     }
 
-
-    
     func startInstallApp(_ fileUrl:URL) async {
         do {
             self.installprogressVisible = true
@@ -1213,11 +1209,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
                 }
             }
         }
-        
-        if appFound == nil && bundleId == "builtinSideStore" {
-            appFound = LCAppModel(appInfo: BuiltInSideStoreAppInfo.shared)
-        }
-        
+
         if isFoundAppLocked && !sharedModel.isHiddenAppUnlocked {
             do {
                 let result = try await LCUtils.authenticateUser()
@@ -1289,8 +1281,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
     func jitLaunch(withPID pid: Int, withScript script: String? = nil, appName: String) async {
         await MainActor.run {
             let encodedData = script?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-                
-            
+
             if let jitEnabler = JITEnablerType(rawValue: LCUtils.appGroupUserDefault.integer(forKey: "LCJITEnablerType")) {
                 if jitEnabler == .StosDebug || jitEnabler == .StosDebugLC {
                     let encoded = encodedData.map { "&script=\($0)" } ?? ""
@@ -1380,13 +1371,7 @@ struct LCAppListView : View, LCAppBannerDelegate, LCAppModelDelegate {
             Task { await installFromUrl(urlStr: url.absoluteString) }
             return
         }
-        
-        if url.scheme == "sidestore" && UserDefaults.sideStoreExist() {
-            UserDefaults.standard.setValue(url.absoluteString, forKey: "launchAppUrlScheme")
-            LCUtils.openSideStore(delegate: self)
-            return
-        }
-        
+
         if url.host == "open-web-page" || url.host == "open-url" {
             if let urlComponent = URLComponents(url: url, resolvingAgainstBaseURL: false), let queryItem = urlComponent.queryItems?.first {
                 if queryItem.value?.isEmpty ?? true {

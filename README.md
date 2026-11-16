@@ -69,40 +69,11 @@ GameCase 是一个专为 iOS 移植游戏设计的侧载游戏容器。它基于
 - **数据包手动放置**：也可以不用 App 内导入，直接在「文件」App 里把 `romfs.img` 放进 `GameCase → Data → Application → <游戏名> → Documents` 文件夹内（注意是游戏容器夹里面的 Documents，不是放在容器夹根目录）。
 - **免 JIT 模式**：在容器设置中导入与签名容器本体同一团队的证书，团队不一致会被挡下。
 
-## SideStore 版使用说明
+## 签名与续签
 
-Release 同时提供 `GameCase+SideStore.ipa`：内置了完整的 SideStore，整个应用只占一个免费签名名额。它的用处是**内签**——在手机上用你的 Apple ID 给 GameCase 本体续签、更新，以及签名安装其它应用，全程不需要电脑。
+本项目只提供 `GameCase.ipa`，不再内置 SideStore。仍可使用独立安装的 SideStore / AltStore 为 GameCase 签名、续签，并在 GameCase 设置中从外部签名工具导入证书。
 
-### 首次设置
-
-1. 在 GameCase「设置」页点「打开内置 SideStore」，在它的设置中登录 Apple ID，并连接 LocalDevVPN。
-2. 在内置 SideStore 的设置页进入「Pairing File Management（配对文件管理）」，点「Wireless Pairing（无线配对）」，保持 LocalDevVPN 连接即可在手机上完成配对、生成配对文件，全程不需要电脑。配对文件只需生成一次，之后的刷新都走它。
-3. 到「My Apps」页点一次「Refresh All」。
-4. 回到 GameCase「设置」页点「从 SideStore 导入证书」，按钮变为「移除证书」即已打通，免 JIT 模式随之可用。
-
-### 免 JIT 的证书前提（重要）
-
-免 JIT 只认**开发（Development）证书**，且导入 GameCase 的证书必须与**签 GameCase 本体的证书同团队**，两条缺一不可：
-
-- **免费 Apple ID**：登录内置 SideStore 生成的个人团队开发证书可用，但前提是 GameCase 本体也是同一个 ID 签的——先在内置 SideStore 里把本体刷新成该 ID 的签名，再点「从 SideStore 导入证书」。
-- **付费开发者证书**：可以，本体与导入须同团队。
-- **分发（Distribution）证书**：签的本体无法使用免 JIT（会提示「未被使用开发证书签名」），请改用开发证书签名，或使用 JIT 模式。
-
-### 登录报 -80045
-
-`This action cannot be completed at this time (-80045)` 是苹果 2026 年 10 月起收紧登录校验的结果（递交的设备身份与自报信息不一致），与账号密码无关。改一次设置即可，改完后刷新、注册都走这套配置（以下按 GameCase 内置版的中文界面）：
-
-1. 「设置」→「用户自定义」：关掉「设备端 Anisette」，点「立即重启」。
-2. 「设置」→「Anisette 服务器」：选 SideStore (new)，关掉「启用自动轮换」。
-3. 「用户自定义」→「Anisette 客户端配置」→「远程服务器同步」→「另存为覆盖项」，再「保存覆盖项」。同步失败就手动填 Client Info `<PC> <Windows;6.2(0,0);9200> <com.apple.AuthKit/1 (com.apple.iTunes/12.12.4.1)>`、User Agent `akd/1.0 CFNetwork/808.1.4`。
-4. 「用户自定义」→「重置 adi.pb」。
-5. 重新登录；双重验证用其他苹果设备上弹出的验证码，不要等短信。
-
-### 日常使用
-
-- **返回 GameCase**：在内置 SideStore 的「My Apps」页点左上角的退出（escape）图标即可回库（或用应用切换器）。News 页条目上的 OPEN 不是返回入口，点了不会有反应。
-- **续签**：免费证书临近到期时，打开内置 SideStore 点「Refresh All」即可为 GameCase 本体续签。
-- **更新**：把新版 GameCase 的 IPA 在内置 SideStore 中安装即覆盖更新，游戏与数据保留。
+从旧的内置版升级时，请使用相同的 App 标识覆盖安装以保留游戏与存档。升级前先准备好外部续签工具；升级后不能再通过 GameCase 打开内置 SideStore。升级不会主动删除原有 SideStore 数据目录。
 
 ## 致谢与开源来源
 
@@ -120,8 +91,8 @@ GameCase 站在以下开源工作之上，特此致谢：
 
 ## 链接
 
-- 本项目：[Tiaoge-tou/GameCase](https://github.com/Tiaoge-tou/GameCase)
-- 下载（nightly）：[Releases](https://github.com/Tiaoge-tou/GameCase/releases)
+- 本项目：[ozedge9official-beep/GameCase](https://github.com/ozedge9official-beep/GameCase)
+- 下载（nightly）：[Releases](https://github.com/ozedge9official-beep/GameCase/releases)
 - 上游底座：[LiveContainer/LiveContainer](https://github.com/LiveContainer/LiveContainer)
 - 上游原 README（归档）：[docs/livecontainer-readme.md](docs/livecontainer-readme.md)
 - 许可证：[LICENSE](LICENSE)

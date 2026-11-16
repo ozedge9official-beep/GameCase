@@ -473,10 +473,7 @@ struct LCDatapackImportView: View {
                     try? fm.removeItem(at: tmp)
                     throw CocoaError(.fileWriteUnknown)
                 }
-                if fm.fileExists(atPath: dest.path) {
-                    try fm.removeItem(at: dest)
-                }
-                try fm.moveItem(at: tmp, to: dest)
+                try LCFileReplacement.replaceFile(at: dest, with: tmp)
                 await MainActor.run {
                     resultSize = expected
                     stage = .done
@@ -515,9 +512,9 @@ struct LCDatapackImportView: View {
             if isCancelled() {
                 throw LCDatapackCopyError.cancelled
             }
-            let chunk = reader.readData(ofLength: lcDatapackChunkSize)
+            let chunk = try reader.read(upToCount: lcDatapackChunkSize) ?? Data()
             if chunk.isEmpty { break }
-            writer.write(chunk)
+            try writer.write(contentsOf: chunk)
             written += Int64(chunk.count)
             await onProgress(written)
         }
@@ -727,23 +724,16 @@ struct LCDatapackImportView: View {
                     try await copyOne(file, to: staging.appendingPathComponent(file.lastPathComponent))
                 }
 
-                // 提交：staging 与目标同卷，逐项删旧换新（rename 级操作）
-                func commit(_ staged: URL, to dest: URL) throws {
-                    guard fm.fileExists(atPath: staged.path) else { return }
-                    if fm.fileExists(atPath: dest.path) {
-                        try fm.removeItem(at: dest)
-                    }
-                    try fm.moveItem(at: staged, to: dest)
-                }
-                if plan.romfs != nil {
-                    try commit(staging.appendingPathComponent("romfs.img"), to: documents.appendingPathComponent("romfs.img"))
-                }
+                // Commit the complete datapack with rollback across all destinations.
+                var names: [String] = []
+                if plan.romfs != nil { names.append("romfs.img") }
                 if plan.aocDirectory != nil {
-                    try commit(staging.appendingPathComponent("aoc"), to: documents.appendingPathComponent("aoc"))
+                    // An empty DLC directory is still a valid replacement.
+                    try fm.createDirectory(at: staging.appendingPathComponent("aoc"), withIntermediateDirectories: true)
+                    names.append("aoc")
                 }
-                for file in plan.extraFiles {
-                    try commit(staging.appendingPathComponent(file.lastPathComponent), to: documents.appendingPathComponent(file.lastPathComponent))
-                }
+                names.append(contentsOf: plan.extraFiles.map(\.lastPathComponent))
+                try LCFileReplacement.commitDirectory(staging, to: documents, names: names)
                 try? fm.removeItem(at: staging)
 
                 let result = plan.romfs.map { Self.fileSize($0) } ?? total

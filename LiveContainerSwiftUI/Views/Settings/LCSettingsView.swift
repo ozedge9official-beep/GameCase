@@ -41,7 +41,6 @@ struct LCSettingsView: View {
     @State private var certificateDataFound = false
     
     @StateObject private var certificateImportAlert = YesNoHelper()
-    @StateObject private var certificateImportFromBuiltInSideStoreAlert = YesNoHelper()
     @StateObject private var certificateRemoveAlert = YesNoHelper()
     @StateObject private var certificateImportFileAlert = AlertHelper<URL>()
     @StateObject private var certificateImportPasswordAlert = InputHelper()
@@ -149,37 +148,18 @@ struct LCSettingsView: View {
                             Text("lc.settings.removeCertificate".loc)
                         }
                     }
-                    // 显示条件在上游「宿主由 AltStore/SideStore 安装」之外
-                    // 补上内置 SideStore 存在的情况：GameCase 宿主多经
-                    // LCSign/证书安装，store 检测为 .Unknown 时上游条件
-                    // 永假，这行永远不显示，但处理函数内的内置路线
-                    // （按 sideStoreExist 读共享钥匙串）本就可用。
-                    // 名称同理：.Unknown 时 getStoreName 返回 Unknown
-                    // Store，内置场景固定显示 SideStore。
-                    if store == .AltStore || store == .SideStore || UserDefaults.sideStoreExist() {
+                    if store == .AltStore || store == .SideStore {
                         Button {
-                            Task{ await importCertificateFromSideStore() }
+                            Task { await importCertificateFromSideStore() }
                         } label: {
                             if certificateDataFound {
-                                Text("lc.settings.refreshCertificateFromStore %@".localizeWithFormat(store == .AltStore ? storeName : "SideStore"))
+                                Text("lc.settings.refreshCertificateFromStore %@".localizeWithFormat(storeName))
                             } else {
-                                Text("lc.settings.importCertificateFromStore %@".localizeWithFormat(store == .AltStore ? storeName : "SideStore"))
+                                Text("lc.settings.importCertificateFromStore %@".localizeWithFormat(storeName))
                             }
                         }
                     }
-                    // 内置 SideStore 的打开入口（仅 +SideStore 版有这个
-                    // framework）：游戏库改版后上游 Apps 页的 SideStore
-                    // 按钮已不在，这里补回——玩家要先在内置 SideStore
-                    // 里登录 Apple ID 并刷新一次，上面的一键导入证书
-                    // 才读得到共享钥匙串里的证书。
-                    if UserDefaults.sideStoreExist() {
-                        Button {
-                            LCUtils.openSideStore()
-                        } label: {
-                            Text("lc.settings.openBuiltinSideStore".loc)
-                        }
-                    }
-                    
+
                     NavigationLink {
                         LCJITLessDiagnoseView()
                     } label: {
@@ -357,7 +337,7 @@ struct LCSettingsView: View {
             Section {
                 HStack {
                     Image("GitHub")
-                    Button("Tiaoge-tou/GameCase") {
+                    Button("ozedge9official-beep/GameCase") {
                         openGameCase()
                     }
                 }
@@ -437,11 +417,6 @@ struct LCSettingsView: View {
                         Text("Export Dyld")
                     }
                     Button {
-                        Task { await nukeSideStore() }
-                    } label: {
-                        Text("Nuke SideStore")
-                    }
-                    Button {
                         exportMainBundle()
                     } label: {
                         Text("Export Main Bundle")
@@ -499,18 +474,6 @@ struct LCSettingsView: View {
         } message: {
             Text("lc.settings.removeCertificateDesc".loc)
         }
-        .alert("lc.settings.importCertFromBuiltinSideStore".loc, isPresented: $certificateImportFromBuiltInSideStoreAlert.show) {
-            Button {
-                certificateImportFromBuiltInSideStoreAlert.close(result: true)
-            } label: {
-                Text("lc.common.ok".loc)
-            }
-            Button("lc.common.cancel".loc, role: .cancel) {
-                certificateImportFromBuiltInSideStoreAlert.close(result: false)
-            }
-        } message: {
-            Text("lc.settings.importCertFromBuiltinSideStoreDesc".loc)
-        }
         .betterFileImporter(isPresented: $certificateImportFileAlert.show, types: [.p12], multiple: false, callback: { fileUrls in
             certificateImportFileAlert.close(result: fileUrls[0])
         }, onDismiss: {
@@ -532,11 +495,11 @@ struct LCSettingsView: View {
     }
     
     func openGameCase() {
-        UIApplication.shared.open(URL(string: "https://github.com/Tiaoge-tou/GameCase")!)
+        UIApplication.shared.open(URL(string: "https://github.com/ozedge9official-beep/GameCase")!)
     }
 
     func openLicense() {
-        UIApplication.shared.open(URL(string: "https://github.com/Tiaoge-tou/GameCase/blob/main/LICENSE")!)
+        UIApplication.shared.open(URL(string: "https://github.com/ozedge9official-beep/GameCase/blob/main/LICENSE")!)
     }
 
     func openGitHub() {
@@ -663,61 +626,7 @@ struct LCSettingsView: View {
     }
     
     func importCertificateFromSideStore() async {
-        if UserDefaults.sideStoreExist() {
-            if let ans = await certificateImportFromBuiltInSideStoreAlert.open(), ans {
-                let query: [String: Any] = [
-                    kSecClass as String: kSecClassGenericPassword,
-                    kSecAttrAccount as String: "signingCertificate",
-                    kSecReturnData as String: true,
-                    kSecMatchLimit as String: kSecMatchLimitOne,
-                    kSecAttrService as String: "com.tiaoge.gamecase",
-                    kSecAttrSynchronizable as String: kSecAttrSynchronizableAny
-                ]
-                
-                var item: CFTypeRef?
-                let status = SecItemCopyMatching(query as CFDictionary, &item)
-                
-                guard status == errSecSuccess else {
-                    if status == errSecItemNotFound {
-                        errorInfo = "lc.settings.importCertFromBuiltinSideStore.certNotFounndErr".loc
-                        errorShow = true
-                    } else {
-                        errorInfo = "Keychain read error: \(status)"
-                        errorShow = true
-                    }
-                    return
-                }
-                
-                guard let data = item as? Data else {
-                    errorInfo = "Failed to decode certificate data"
-                    errorShow = true
-                    return
-                }
-                
-                let passwordQuery: [String: Any] = [
-                    kSecClass as String: kSecClassGenericPassword,
-                    kSecAttrAccount as String: "signingCertificatePassword",
-                    kSecReturnData as String: true,
-                    kSecMatchLimit as String: kSecMatchLimitOne,
-                    kSecAttrService as String: "com.tiaoge.gamecase",
-                    kSecAttrSynchronizable as String: kSecAttrSynchronizableAny
-                ]
-                
-                var passwordItem: CFTypeRef?
-                let passwordStatus = SecItemCopyMatching(passwordQuery as CFDictionary, &passwordItem)
-                var password = ""
-                if passwordStatus == errSecSuccess,
-                   let passwordData = passwordItem as? Data,
-                   let pwd = String(data: passwordData, encoding: .utf8) {
-                    password = pwd
-                }
-                
-                onSideStoreCertificateCallback(certificateData: data, password: password)
-                
-                return
-            }
-        }
-        
+
         let storeScheme : String
         if store == .AltStore {
             storeScheme = "altstore-classic"
@@ -751,21 +660,7 @@ struct LCSettingsView: View {
 
         UserDefaults.standard.set(nil, forKey: "LCAppGroupID")
     }
-    
-    func nukeSideStore() async {
-        guard let doRemove = await certificateRemoveAlert.open(), doRemove else {
-            return
-        }
-        do {
-            let fm = FileManager.default
-            let sidestoreAppGroupURL = LCPath.lcGroupDocPath.deletingLastPathComponent()
-            try fm.removeItem(at: sidestoreAppGroupURL.appendingPathComponent("Database"))
-            try fm.removeItem(at: sidestoreAppGroupURL.appendingPathComponent("Apps"))
-        } catch {
-            print("wtf \(error)")
-        }
-    }
-    
+
     func exportDyld() {
         let url = URL(fileURLWithPath: "/usr/lib/dyld")
         let fileManager = FileManager.default

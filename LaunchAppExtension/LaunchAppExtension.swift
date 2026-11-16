@@ -88,7 +88,7 @@ struct LaunchAppExtension: AppIntent {
             isLiveContainerURL = schemes.contains(preferredScheme)
         }
         
-        if !isLiveContainerURL && normalizedLaunchScheme != "sidestore" {
+        if !isLiveContainerURL {
             throw LaunchAppExtensionError("Not a gamecase URL!")
         }
         
@@ -99,13 +99,7 @@ struct LaunchAppExtension: AppIntent {
             throw LaunchAppExtensionError("lcSharedDefaults failed to initialize, because no app group was found. Did you sign LiveContainer correctly?")
         }
         
-        if normalizedLaunchScheme == "sidestore" {
-            lcSharedDefaults.set("gamecase", forKey: "LCLaunchExtensionScheme")
-            lcSharedDefaults.set("builtinSideStore", forKey: "LCLaunchExtensionBundleID")
-            lcSharedDefaults.set(Date.now, forKey: "LCLaunchExtensionLaunchDate")
-            try await openURL(launchOptions: ["url": launchURL])
-            return .result()
-        }
+
         
         if launchURL.host != "gamecase-launch" {
             throw LaunchAppExtensionError("Not a gamecase launch URL!")

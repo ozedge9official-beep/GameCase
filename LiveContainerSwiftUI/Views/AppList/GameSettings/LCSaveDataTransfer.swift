@@ -135,10 +135,7 @@ enum LCSaveDataStore {
                     try? fm.removeItem(at: tmp)
                     throw CocoaError(.fileWriteUnknown)
                 }
-                if fm.fileExists(atPath: dest.path) {
-                    try fm.removeItem(at: dest)
-                }
-                try fm.moveItem(at: tmp, to: dest)
+                try LCFileReplacement.replaceFile(at: dest, with: tmp)
             } else if let root = contentRoot {
                 // 先整集拷到同卷临时夹，再三步换名（旧 save 先挪开、新集就位、删旧集）
                 let incoming = documents.appendingPathComponent("save.importing", isDirectory: true)
@@ -156,18 +153,13 @@ enum LCSaveDataStore {
                         throw CocoaError(.fileWriteUnknown)
                     }
                 }
-                let swappedOut = documents.appendingPathComponent("save.swapped-out", isDirectory: true)
-                if fm.fileExists(atPath: swappedOut.path) {
-                    try fm.removeItem(at: swappedOut)
-                }
-                try fm.moveItem(at: saveDir, to: swappedOut)
-                do {
-                    try fm.moveItem(at: incoming, to: saveDir)
-                } catch {
-                    try? fm.moveItem(at: swappedOut, to: saveDir)
-                    throw error
-                }
-                try? fm.removeItem(at: swappedOut)
+                // Stage the save directory under its final name for a rollbackable commit.
+                let transaction = documents.appendingPathComponent(".save-commit-\(UUID().uuidString)", isDirectory: true)
+                try fm.createDirectory(at: transaction, withIntermediateDirectories: false)
+                defer { try? fm.removeItem(at: transaction) }
+                try fm.moveItem(at: incoming, to: transaction.appendingPathComponent("save"))
+                try LCFileReplacement.commitDirectory(transaction, to: documents, names: ["save"])
+
             }
             return backup
         }.value

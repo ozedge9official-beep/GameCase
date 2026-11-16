@@ -287,8 +287,7 @@ extension LCUtils {
                     await UIApplication.shared.open(mountStatusUrl)
                 }
                 return false
-                
-                
+
             } catch {
                 onServerMessage?("Failed to contact JitStreamer-EB server: \(error)")
             }
@@ -302,7 +301,6 @@ extension LCUtils {
             
             if jitEnabler == .StosDebugLC {
                 let encodedStr = Data(launchURLStr.utf8).base64EncodedString()
-
 
                 var appToLaunch: LCAppModel? = nil
                 // find an app that can respond to stikjit://
@@ -363,7 +361,6 @@ extension LCUtils {
             let launchURL : URL
             if jitEnabler == .StikJITLC {
                 let encodedStr = Data(launchURLStr.utf8).base64EncodedString()
-
 
                 var appToLaunch: LCAppModel? = nil
                 // find an app that can respond to stikjit://
@@ -515,12 +512,5 @@ extension LCUtils {
             }
         }
     }
-    
-    static func openSideStore(delegate: LCAppModelDelegate? = nil, urlStr: String? = nil) {
-        let sideStoreApp = LCAppModel(appInfo: BuiltInSideStoreAppInfo.shared, delegate: delegate)
-        
-        Task {
-            try await sideStoreApp.runApp(bundleIdOverride: "builtinSideStore", urlStr: urlStr)
-        }
-    }
+
 }
