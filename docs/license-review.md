@@ -1,60 +1,53 @@
 # 许可证与分发资料审查
 
-核对日期：2026-11-17。核对对象：本仓库 `9561f7b591cf692c8ff20568340abb52c68035c2` 与已发布的 1.0.19 IPA。
+核对与修改日期：2026-11-17。最初核对对象为 main 的 9561f7b591cf692c8ff20568340abb52c68035c2 与 1.0.19 IPA；本次处理版本为 1.0.20。以下区分证据、已处理内容和仍存在的边界，不是“全部合规”的法律认证。
 
-这是基于可取得文件的技术审查记录，不是“全部合规”的认证。许可证适用范围、移植代码的完整来源链及图片授权仍需核实；涉及争议时应由具备相应资质的专业人士评估。
+## 确认的许可与已处理内容
 
-## 已确认
+- 根 LICENSE 继续保持 GNU AGPL v3 原文，与 LiveContainer 和直接父仓库一致。保留 Duy Tran、hugeBlack、其他贡献者及 GameCase 的来源链：Joshliew33/GameCase → Tiaoge-tou/GameCase。原来源仓库当前访问 404，未据此删除归属。
+- 新增 [第三方通知索引](../THIRD_PARTY_NOTICES.md) 和完整许可副本，涵盖 NX2Apple MIT/NOTICE、固定 litehook MIT 与其外部 Apple ABI 头文件的 APSL-2.0、OpenSSL 3.3.3 Apache-2.0 和包装分发许可、ElleKit BSD、PatchfinderUtils MIT、原版与 Feather 独立子模块的 ZSign MIT、libarchive 两份原始头文件版权通知。保留现有文件头部版权，不用致谢链接代替全文。
+- 1.0.19 IPA 仅查到兼容框架原 LICENSE，未发现集中许可资料。1.0.20 起，在 Xcode 签名之前将完整许可资料复制到 GameCaseLegal/，设置页支持离线阅读。后续签名工具应保留该目录。
+- 同一 Release 提供 GameCase-source.tar.gz、LICENSE、THIRD_PARTY_NOTICES.md 和 SHA256SUMS。源码包展开固定 litehook/OpenSSL 材料，另附校验 SHA-256 的 OpenSSL 官方源码及原始配置/构建脚本。源码 tree、依赖 commit 和版本记录在 SOURCE-MANIFEST.json；发布流程核验源码包、IPA 许可清单和目标源码 tree 一致。
+- [构建与安装说明](BUILDING.md) 记录工具、命令、依赖重建和签名要求；不把 GitHub 自动生成、不展开子模块的 ZIP 当作唯一源码入口。
+- 本分叉维护者、修改日期、变更范围及测试边界在每次发布说明中列明。未改变接收者修改和再分发权利，未加入“禁止商用”等冲突限制，未将本分叉宣称为上游官方发行。
 
-| 对象 | 查到的依据 | 应保留或补充的资料 |
-| --- | --- | --- |
-| GameCase / LiveContainer | 根目录 LICENSE 为 GNU AGPL v3；与 LiveContainer 及直接父仓库 Joshliew33/GameCase 的许可文本一致 | 原有声明、完整 AGPL、修改说明和日期、对应源码及构建/安装说明 |
-| 原项目来源 | GitHub fork 元数据记录直接父仓库 Joshliew33/GameCase，source 为 Tiaoge-tou/GameCase | 两级来源均保留，避免把本分叉写成从零创作；本次 Tiaoge-tou/GameCase 直接访问返回 404，不能据此删除其归属 |
-| NX2Apple | 当前公开 LICENSE 为 MIT，列有 seedds、jhaizhou、LNPANDY and NX2Apple contributors；NOTICE 说明 nxnative / d2r-mobile 的来源链 | 复制了代码的部分应保留相应完整版权与许可通知；致谢链接不能代替这些文本。当前版本的许可不能替代对实际移植版本的核对 |
-| litehook | 固定子模块 a7e9f599d7f0b3d77008ad62bf10cb10dab6eca9 的 MIT，Copyright 2022–2024 Lars Fröder | MIT 完整文本与版权通知 |
-| OpenSSL | 固定包装仓库 623c84da314e85363236507ca38a4bde65df21c3；iOS 头文件标明 OpenSSL 3.3.3、Apache-2.0 | 实际版本对应的许可、适用 NOTICE（如有）、版权通知及可验证的依赖构建来源，不能误套旧版 OpenSSL/SSLeay 的许可条件 |
-| CydiaSubstrate 兼容框架 | 仓库及 IPA 内均有 Évelyne Bélanger / ElleKit 的三条款 BSD 风格 LICENSE | 保留现有文本；不得暗示 ElleKit 作者为本项目背书 |
-| CFastFind 派生辅助代码 | LiveContainer/utils.m 保留 Linus Henze 2021 的署名及来源链接；PatchfinderUtils 当前公开 MIT 包含 Pinauten GmbH 的版权通知 | 保留已有署名并补许可文本，继续核对采用版本 |
-| libarchive 头文件 | archive.h 与 archive_entry.h 自带两条款 BSD 文本及原版权声明 | 保留头部通知，并在分发资料中集中列明；iOS 系统 libarchive 动态库与本仓库携带的头文件应区分 |
+## 签名代码：已核实的范围与修正
 
-完整已核对文本的副本见 [第三方通知索引](../THIRD_PARTY_NOTICES.md)。这些副本不会把其他文件自动重新许可。
+上游 README 记录最初来自 zhlynn/zsign，并采用 khcrysalis 的 Feather 修改版。Feather 已迁至 [claration/feather](https://github.com/claration/feather)，主项目 LICENSE 为 GPL-3.0；但其 `Zsign` 实际为**独立子模块**，不是仅凭主仓库许可证就能判定的普通子目录。
 
-## 需要优先补齐的分发资料
+进一步追溯到该子模块 [claration/zsign](https://github.com/claration/zsign) 的固定提交 `c4ba9da4283031c07efa03bce42c4b8602d22e73`，其 LICENSE 是 MIT（blob `e36bb6e598fc0bc087eef9c04cf622a99d888f0b`，Copyright 2026 zhlynn）。已将该提交的原始许可单独保留。此前仅根据 Feather 主项目 GPL 提出的签名模块风险，现按这一更直接的证据修正；不把 GPL 自动套到独立 MIT 子模块，也不借此重新许可来自其他来源的改动。
 
-1. **IPA 内的许可资料。** 对 1.0.19 ZIP 路径检查时，仅发现 CydiaSubstrate.framework/LICENSE，未发现主 AGPL 或其他已确认依赖的集中许可资料。下一次实际二进制发布应随包加入主许可证与适用的第三方通知，并在设置页提供离线查看入口。本次文档补充不会改变已发布 IPA 的内容。
-2. **每个安装包旁的明确源码入口。** AGPL 第 6(d) 条允许网络分发时从同一位置提供等效源码访问，也允许有清楚指引的另一源码服务器。不能只给“最新版 main”链接；应标明对应 tag/commit、子模块版本及构建说明，并持续保证访问。
-3. **完整对应源码。** GitHub 自动生成的 Source code ZIP 不会自动展开子模块。`git clone --recurse-submodules` 是获取本仓库固定依赖的入口，但不是对“完整对应源码”义务的自动证明。尤其需要核对预编译 OpenSSL 的实际源码、配置及重建脚本是否齐备；分发者应保留必要源码与脚本，不能只依赖临时 Actions 产物。
-4. **明显的修改说明及相关日期。** AGPL 第 5(a) 条要求修改版携带明显的修改通知和相关日期。保留原始声明，补充本分叉维护者、版本日期、实际变更与验证范围；不能声称是原作者官方发行。
-5. **保留许可证及接收者权利。** 根许可证保持不变，适用的第三方许可分别保留。不要擅自把全部代码改为 MIT，也不要加入与已有许可冲突的“禁止修改/禁止再分发/禁止商用”等附加限制。免责声明不能替代履行许可条件。
+本仓库 ZSign/ 包含 LiveContainer 的修改，与子模块并非逐文件相同。继续保留原始署名和上游归属，本分叉修改受原项目适用条款约束；当前公开子模块的许可是核对依据，不应虚构它就是所有历史导入代码的精确提交。
 
-## 尚不能由现有证据消除的风险
+## Apple 头文件的处理
 
-### 签名代码的来源与许可范围
+原 `LiveContainer/Tweaks/libproc.h` 含 Apple APSL-2.0 版权头，另有复制的 vnode/stat ABI 结构；实际用途仅是查询当前进程打开的文件路径。
 
-归档的上游 README 明确说明 ZSign 最初来自 zhlynn/zsign，并采用了 khcrysalis 的 Feather 修改版。原 zhlynn/zsign 当前 LICENSE 是 MIT；Feather 仓库已迁移到 [claration/feather](https://github.com/claration/feather)，当前项目 LICENSE 为 GPL-3.0。
+本次将这一用途改为 SDK `<fcntl.h>` 的 F_GETPATH，仅保留 libSystem 函数签名与当前进程描述符列表所需的最小接口定义，移除不再使用的两个复制头文件；没有剥除其版权后换名重发。后台锁处理继续使用原有流程，并增加真实 Darwin 文件描述符测试。SQLite 私有查询符号不可用时转入原有 fcntl 锁查询，避免空指针调用。
 
-因此，不能仅凭当前原版 zsign 的 MIT 文件，就认定仓库中的所有 ZSign 修改都只有 MIT 条件。应追溯实际导入提交、逐文件版权与许可，确认 GPL 与 AGPL 组合时对各部分的要求，并保留相应通知和源码。GPLv3 与 AGPLv3 的组合条款并不等于所有部分都被自动改成同一种许可证。提供两份上游文本是审查资料，不是对当前每个文件的适用性作最终判断。
+此变更只适用于新版本当前代码，不声称撤销历史文件的许可条件。
 
-### Apple 标记文件
+递归检查还发现 litehook 固定子模块中的 external/include/dyld_cache_format.h 和 fixup-chains.h 也保留 Apple APSL-2.0 头。这些是 dyld 二进制格式的接口/布局定义；本次保留其完整原文、版权和 APSL 全文，并在 IPA 中离线提供，源码包亦保留固定版本原文件。它们未被改标为 MIT；移除本仓库不必要的头文件不代表所有依赖中都不存在 Apple 许可。不同许可部分的组合适用范围不作无依据的法律结论。
 
-`LiveContainer/Tweaks/libproc.h` 明确标注 Apple Public Source License 2.0，并保留 Apple 版权头。应继续确认这些内容作为系统接口声明/头文件时的适用范围及相关例外，必要时评估替换为可合法使用的 SDK 声明。不能把它的原版权头删除或直接改标为 AGPL，也不能只凭根 LICENSE 就认定其全部条件已经满足。
 
-### 游戏美术与截图
+## 游戏封面与截图
 
-仓库携带两张游戏封面 `LiveContainerSwiftUI/GameCovers/cover-010013C00E930000.jpg`、`cover-0100A00019DE0000.jpg`，以及含游戏画面的说明截图。本次未找到这些素材的独立授权、可再分发许可或完整来源记录。
+本次未查到两张内置游戏封面及三个 README 游戏截图的独立再分发授权，因此从当前树移除这些文件和引用。保留本项目原有图标、LiveContainer 图标及贡献者归属，不将开源许可解释为游戏美术许可。
 
-游戏美术不会因为被放入 AGPL/MIT 仓库就自动获得开源许可。“版权归原厂”“仅供学习”“无隶属关系”等文字也不等于授权。建议优先取得并记录许可，或换成有明确授权的原创/占位素材。截图的适用例外与合理使用需要结合实际用途和管辖区判断。联网抓取的商店图片同样需要考虑其权利与服务条款。
+游戏自带封面、自定义选图和图标兜底继续可用。商店取图改为设置页主动操作，说明会发送游戏 ID/名称及需要相应使用权；浏览游戏库和导入 IPA 不再自动抓取。这个交互变化不等于第三方商店已经授权取图或再分发。
 
-本次不擅自宣称素材已获授权，也不将任何尚未核实的外部代码统一重新许可。
+## 仍需保留的边界
 
-## 核验来源
+1. **历史版本。** 未重写 Git 历史，未替换旧 tag、旧 IPA 及其截图。1.0.20 的补充不会自动补齐旧包或赋予历史图片授权。保留旧版本分发时，仍应提供相应的许可/源码资料并单独处理其中素材。
+2. **继承的预编译框架。** CydiaSubstrate.framework 实为 ElleKit 兼容库，原三条款 BSD 许可已保留；二进制可追至 LiveContainer 提交 abb583577a40af1a7455f0753a7bb2b14a809e18、blob 8deb4185968db5df964ed76c113bf58c4b31eee9。尚无记录证明它精确对应 ElleKit 哪个源码提交。公开 ElleKit 源码入口和现有证据见构建说明，不能将此描述为完全可复现或全部历史溯源已经完成。
+3. **历史移植版本。** NX2Apple、PatchfinderUtils 和 ZSign 当前可取得的许可已保留，仍需区分当前上游许可与实际历史移植来源，不虚构缺失的导入提交。
+4. **外部内容与平台。** 用户应有权使用其游戏、图片、证书及数据。许可证、免责声明和“仅学习”文字都不替代不存在的权利。具体争议需要结合适用法律与事实评估。
 
-- [本仓库 AGPL](../LICENSE)，第 4、5、6、10、13、15、16 条。
-- [LiveContainer LICENSE](https://github.com/LiveContainer/LiveContainer/blob/main/LICENSE)，blob `0ad25db4bd1d86c452db3f9602ccdbe172438f52`。
+## 可验证来源
+
+- [本仓库 AGPL](../LICENSE)；LiveContainer 与直接父仓库根许可 blob `0ad25db4bd1d86c452db3f9602ccdbe172438f52`。
 - [NX2Apple LICENSE](https://github.com/LNPANDY/NX2Apple/blob/main/LICENSE)，blob `cdf95f0e907f5220033acc72175fdedde7de4b06`；[NOTICE](https://github.com/LNPANDY/NX2Apple/blob/main/NOTICE)，blob `f15e580cc63b5130a78928490940fd369e22a4af`。
-- [固定 litehook 许可](https://github.com/LiveContainer/litehook/blob/a7e9f599d7f0b3d77008ad62bf10cb10dab6eca9/LICENSE)。
-- [固定 OpenSSL 分发许可](https://github.com/krzyzanowskim/OpenSSL/blob/623c84da314e85363236507ca38a4bde65df21c3/LICENSE.txt) 及该提交的 `ios-arm64/OpenSSL.framework/Headers/opensslv.h`。
-- [Feather GPL](https://github.com/claration/feather/blob/main/LICENSE)，blob `f288702d2fa16d3cdf0035b15a9fcbc552cd88e7`；[原版 zsign MIT](https://github.com/zhlynn/zsign/blob/master/LICENSE)，blob `e36bb6e598fc0bc087eef9c04cf622a99d888f0b`。
+- [litehook 固定许可](https://github.com/LiveContainer/litehook/blob/a7e9f599d7f0b3d77008ad62bf10cb10dab6eca9/LICENSE)。
+- [OpenSSL 固定包装源码与许可](https://github.com/krzyzanowskim/OpenSSL/tree/623c84da314e85363236507ca38a4bde65df21c3)；OpenSSL 3.3.3 官方源码 SHA-256 见构建说明。
+- [Feather 独立 Zsign 子模块 MIT](https://github.com/claration/zsign/blob/c4ba9da4283031c07efa03bce42c4b8602d22e73/LICENSE)；[原版 zsign MIT](https://github.com/zhlynn/zsign/blob/master/LICENSE)。
 - [PatchfinderUtils MIT](https://github.com/pinauten/PatchfinderUtils/blob/master/LICENSE)，blob `fc7ce3fb5d250d2772a9477fe8aff46ac5df2011`。
-
-未修改源文件版权头、根许可证、既有版本标签或历史作者记录。

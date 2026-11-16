@@ -2,9 +2,9 @@
 //  LCFetchedCover.swift
 //  LiveContainerSwiftUI
 //
-//  联网获取封面（Phase 19）：没有自定义 / 客体自带 / 内置原画的游戏，按其
+//  联网获取封面（Phase 19）：由用户在设置页主动发起；没有自定义 / 客体自带封面的游戏，按其
 //  Switch 标题 ID 联网抓一次官方横版主视觉，存宿主 Documents/FetchedCovers/
-//  <bundleId>.jpg，解析链排在内置原画之后、图标兜底之前（见
+//  <bundleId>.jpg，解析链排在客体封面之后、图标兜底之前（见
 //  LCGameLibraryInfo.bannerResolution）。
 //
 //  端点验证结论（2026-11-05 实测，丝之歌 010013C00E930000 / 哈迪斯 II
@@ -183,7 +183,7 @@ final class LCCoverFetchService: @unchecked Sendable {
         if LCFetchedCoverStore.exists(forBundleIdentifier: bundleIdentifier) {
             return
         }
-        // 解析链在抓取层之前已有结果（自定义 / 客体自带 / 内置原画）就不必抓
+        // 解析链在抓取层之前已有结果（自定义 / 客体自带）就不必抓
         if LCGameLibraryInfo.bannerResolution(for: appInfo).image != nil {
             return
         }
@@ -237,10 +237,6 @@ final class LCCoverFetchService: @unchecked Sendable {
         return callbacks
     }
 
-    /// 导入完成时的预抓（无单独回调，成功后走全局 onCoverUpdated 刷新库）
-    func prefetch(appInfo: LCAppInfo) {
-        ensureFetched(appInfo: appInfo)
-    }
 
     // MARK: 抓取实现（已验通的任天堂官方链）
 

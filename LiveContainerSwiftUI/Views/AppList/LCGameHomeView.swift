@@ -1233,7 +1233,6 @@ struct LCGameHomeView: View {
             // 按心跳补结后再读快照（回库路径已由客体侧结清，这里是空转）。
             LCPlayStats.reconcileOpenSession()
             playStats = LCPlayStats.allEntries()
-            sweepCoverFetches()
             // 手柄导航接线：回调注入 + 按当前判据决定是否装 handler
             wireGamepadNav()
             isLandscapeLayout = safeSize.width > safeSize.height
@@ -1244,7 +1243,6 @@ struct LCGameHomeView: View {
         }
         .onChange(of: refreshToken) { _ in
             playStats = LCPlayStats.allEntries()
-            sweepCoverFetches()
         }
         .onChange(of: apps.map { key(of: $0) }) { _ in
             ensureFocus()
@@ -1288,16 +1286,6 @@ struct LCGameHomeView: View {
             .padding(.bottom, isLandscapeLayout ? safeAreaInsets.bottom + 10 : safeAreaInsets.bottom + 76)
         }
         .allowsHitTesting(false)
-    }
-
-    /// 联网封面懒抓（Phase 19）：主页出现 / 库刷新时逐个过一遍去重入口——
-    /// 已有更高优先封面、已有抓取缓存、负缓存新鲜的游戏都在入口内直接
-    /// 返回，不发请求；抓取成功后服务回调 bump libraryRefresh，封面随
-    /// 令牌变化重解析（本 onChange 会再扫一遍，但那时缓存已落盘、空转）。
-    private func sweepCoverFetches() {
-        for app in apps {
-            LCCoverFetchService.shared.ensureFetched(appInfo: app.appInfo)
-        }
     }
 
     /// 水平边距对齐 NX2 壳真机截图实测：竖屏 ≈ 屏宽 5.9%（393pt 宽 ≈ 23pt），

@@ -58,21 +58,11 @@ jobs:
           name: GameCase.ipa
           run-id: ${{ inputs.build_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Validate IPA and create checksum
+      - name: Validate IPA, licenses, corresponding source and checksums
         run: |
-          python3 - <<'PY'
-          import hashlib, os, pathlib, plistlib, zipfile
-          path = pathlib.Path('GameCase.ipa')
-          with zipfile.ZipFile(path) as z:
-              assert z.testzip() is None, 'Corrupt IPA'
-              info = plistlib.loads(z.read('Payload/LiveContainer.app/Info.plist'))
-              assert info['CFBundleShortVersionString'] == os.environ['TAG'][1:]
-              assert info['CFBundleVersion'] == os.environ['TAG'][1:]
-              assert info['CFBundleIdentifier'] == 'com.tiaoge.gamecase'
-              assert not any('SideStoreApp.framework' in n or 'SideStoreSupport.framework' in n for n in z.namelist())
-          pathlib.Path('SHA256SUMS').write_text(hashlib.sha256(path.read_bytes()).hexdigest() + '  GameCase.ipa\n')
-          assert pathlib.Path('docs/releases/' + os.environ['TAG'] + '.md').is_file(), 'Missing release notes'
-          PY
+          git fetch origin "$TARGET_SHA" --depth=1
+          python3 .github/validate_release.py
+          test -f "docs/releases/$TAG.md"
       - name: Prepare complete draft release
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
@@ -82,14 +72,14 @@ jobs:
           from pathlib import Path
           release = next(r for r in json.loads(Path('releases.json').read_text()) if r['tag_name'] == os.environ['TAG'])
           assert release['target_commitish'] == os.environ['TARGET_SHA'], 'Existing release targets different source'
-          for name in ['GameCase.ipa', 'SHA256SUMS']:
+          for name in ['GameCase.ipa', 'GameCase-source.tar.gz', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'SHA256SUMS']:
               asset = next(a for a in release['assets'] if a['name'] == name)
               digest = 'sha256:' + hashlib.sha256(Path(name).read_bytes()).hexdigest()
               assert asset.get('digest') == digest, 'Existing asset differs: ' + name
           print('Existing release binary and checksum match; updating source only')
           PYCODE
           else
-            gh release create "$TAG" GameCase.ipa SHA256SUMS --target "$TARGET_SHA" --title "GameCase ${TAG#v}" --notes-file "docs/releases/$TAG.md" --draft
+            gh release create "$TAG" GameCase.ipa GameCase-source.tar.gz LICENSE THIRD_PARTY_NOTICES.md SHA256SUMS --target "$TARGET_SHA" --title "GameCase ${TAG#v}" --notes-file "docs/releases/$TAG.md" --draft
             gh api "repos/$GITHUB_REPOSITORY/releases" > releases.json
           fi
       - name: Generate source from the uploaded IPA

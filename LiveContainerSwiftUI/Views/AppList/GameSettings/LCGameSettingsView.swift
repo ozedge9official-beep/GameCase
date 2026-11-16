@@ -448,12 +448,18 @@ struct LCGameSettingsView: View {
                             .confirmationDialog("封面图", isPresented: $coverMenuPresented, titleVisibility: .visible) {
                                 Button("从相册选择") { photoPickerPresented = true }
                                 Button("从文件选择") { filePickerPresented = true }
+                                Button("联网获取封面") {
+                                    LCCoverFetchService.shared.clearNegativeCache(forBundleIdentifier: app.bundleIdentifier)
+                                    LCCoverFetchService.shared.ensureFetched(appInfo: app.appInfo) {
+                                        self.coverRefresh += 1
+                                    }
+                                }
                                 if coverHasCustom || coverHasFetched {
                                     Button("恢复默认", role: .destructive) { removeCustomCover() }
                                 }
                                 Button("lc.common.cancel".loc, role: .cancel) {}
                             } message: {
-                                Text("自定义封面只替换游戏库里的显示图，存在本机，不影响游戏本体。")
+                                Text("封面仅在本机显示。联网获取会向商店发送游戏标题 ID 或名称；请确认你有权使用相关图片。自定义或游戏自带封面优先显示。")
                             }
                             .sheet(isPresented: $photoPickerPresented) {
                                 LCPhotoImagePicker(
@@ -528,11 +534,6 @@ struct LCGameSettingsView: View {
             coverRefresh += 1
             statusRefresh += 1
             loadState()
-            // 联网封面懒抓（Phase 19）：展示时无缓存、无负缓存则补抓一次，
-            // 成功回调 bump 本页 coverRefresh，封面头与封面行即时换上新图
-            LCCoverFetchService.shared.ensureFetched(appInfo: app.appInfo) {
-                self.coverRefresh += 1
-            }
         }
         // Phase 29：两计数器是本页既有的刷新信号（进页 / 导入关页 /
         // 换封面 / 联网封面抓到），缓存重算统一挂在它们的变化上，各一次
@@ -1038,8 +1039,7 @@ struct LCGameSettingsView: View {
 
     private func removeCustomCover() {
         LCCustomCoverStore.remove(forBundleIdentifier: app.bundleIdentifier)
-        // 恢复默认连联网抓取缓存一并删，并清掉负缓存记录——删完之后
-        // 主页 / 设置页再次展示时允许重新抓（Phase 19）
+        // 恢复默认同时清理下载缓存；只有用户再次选择联网获取才重新下载。
         LCFetchedCoverStore.remove(forBundleIdentifier: app.bundleIdentifier)
         LCCoverFetchService.shared.clearNegativeCache(forBundleIdentifier: app.bundleIdentifier)
         coverRefresh += 1

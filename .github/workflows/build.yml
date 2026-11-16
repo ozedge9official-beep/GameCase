@@ -31,6 +31,8 @@ jobs:
           python3 -m unittest discover -s tests -v
           python3 tests/run_swift_regressions.py
           python3 tests/run_cheat_regressions.py
+          cc -Wall -Wextra -Werror tests/current_process_files.c -o /tmp/gamecase-file-tests
+          /tmp/gamecase-file-tests
 
   build:
     name: Build using xcodebuild command
@@ -52,10 +54,14 @@ jobs:
           xcodebuild archive -archivePath "$archive_path" -scheme LiveContainer -project LiveContainer.xcodeproj -sdk iphoneos -arch arm64 -configuration Release | xcpretty
       - name: Create IPA
         run: sh .github/build_github.sh
+      - name: Bundle corresponding source and build materials
+        run: python3 .github/create_source_bundle.py
       - uses: actions/upload-artifact@v7
         with:
           name: GameCase.ipa
-          path: GameCase.ipa
+          path: |
+            GameCase.ipa
+            GameCase-source.tar.gz
           if-no-files-found: error
 
   release__nightly:
@@ -89,7 +95,13 @@ jobs:
           body: |
             **Commit:** [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
 
+            Corresponding source and build instructions: `GameCase-source.tar.gz` below.
+            Licenses and notices are included in the IPA and source bundle.
+
             [Build workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           files: |
             GameCase.ipa
+            GameCase-source.tar.gz
+            LICENSE
+            THIRD_PARTY_NOTICES.md
             .github/apps_nightly.json
