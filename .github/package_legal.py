@@ -7,7 +7,7 @@ import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-REPOSITORY = "https://github.com/ozedge9official-beep/GameCase"
+REPOSITORY = "https://github.com/whodaregg/GameCase"
 
 
 def stage(destination, root=ROOT):

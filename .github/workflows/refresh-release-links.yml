@@ -1,0 +1,27 @@
+name: Refresh Release Links
+
+on:
+  workflow_dispatch:
+    inputs:
+      previous_owner:
+        description: Previous GitHub username whose repository URLs should be migrated
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-release-links
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Update descriptions and verified feed assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PREVIOUS_OWNER: ${{ inputs.previous_owner }}
+        run: python3 .github/refresh_release_links.py

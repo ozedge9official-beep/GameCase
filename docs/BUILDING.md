@@ -1,6 +1,6 @@
 # 构建、安装与源码包
 
-本分叉由 ozedge9official-beep 维护，基于 Joshliew33/GameCase、Tiaoge-tou/GameCase 和 LiveContainer；原作者及第三方归属见 README 与 THIRD_PARTY_NOTICES.md。主许可证仍为 GNU AGPL v3。修改日期和内容见 docs/releases/。
+本分叉由 whodaregg 维护，基于 Joshliew33/GameCase、Tiaoge-tou/GameCase 和 LiveContainer；原作者及第三方归属见 README 与 THIRD_PARTY_NOTICES.md。主许可证仍为 GNU AGPL v3。修改日期和内容见 docs/releases/。
 
 ## 获取对应版本
 
@@ -8,10 +8,10 @@
 
 源码包已展开 litehook 和 OpenSSL 所需的固定材料，包含 iOS arm64 的预编译 OpenSSL slice、原构建脚本及 OpenSSL 3.3.3 官方源码压缩包。其他平台的预编译 slice 未包含；本项目发布命令仅构建 iOS arm64。GitHub 自动生成的 Source code ZIP 不展开子模块，请优先使用上述单独的源码包。
 
-也可获取 Git tag（以 1.0.20 为例）：
+也可获取 Git tag（以 1.0.21 为例）：
 
 ```sh
-git clone --recurse-submodules --branch v1.0.20 https://github.com/ozedge9official-beep/GameCase.git
+git clone --recurse-submodules --branch v1.0.21 https://github.com/whodaregg/GameCase.git
 cd GameCase
 ```
 

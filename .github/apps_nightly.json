@@ -1,31 +1,28 @@
 {
   "name": "GameCase (nightly)",
   "identifier": "com.livecontainer.source.nightly",
-  "website": "https://github.com/ozedge9official-beep/GameCase",
-  "subtitle": "GameCase (nightly) AltStore Source.",
-  "description": "This is the AltStore Source for GameCase (nightly).\n\n Run iOS apps without actually installing them!",
+  "website": "https://github.com/whodaregg/GameCase",
+  "subtitle": "GameCase AltStore Source.",
+  "description": "This is the AltStore Source for GameCase.\n\nGameCase is a sideloading game container built for iOS game ports. Import a game IPA and its romfs datapack into the library, manage each game's own launcher settings in one place, and play - no jailbreak required.",
   "tintColor": "#0784FC",
-  "iconURL": "https://raw.githubusercontent.com/ozedge9official-beep/GameCase/main/screenshots/AppIcon1024.png",
-  "headerURL": "https://raw.githubusercontent.com/ozedge9official-beep/GameCase/main/screenshots/header.png",
+  "iconURL": "https://raw.githubusercontent.com/whodaregg/GameCase/main/screenshots/AppIcon1024.png",
+  "headerURL": "https://raw.githubusercontent.com/whodaregg/GameCase/main/screenshots/header.png",
   "apps": [
     {
       "beta": false,
       "name": "GameCase (nightly)",
       "bundleIdentifier": "com.tiaoge.gamecase",
       "developerName": "GameCase",
-      "subtitle": "Run iOS apps without actually installing them!",
-      "version": "3.8.11",
-      "versionDate": "2026-11-05T14:10:20Z",
-      "versionDescription": "Nightly build from [20de6e1](https://github.com/ozedge9official-beep/GameCase/commit/20de6e1): Merge pull request 7 from Tiaoge-tou/docs/remove-loadcontrol-note\n\nThis is a nightly release [created automatically with GitHub Actions workflow](https://github.com/ozedge9official-beep/GameCase/actions/runs/42043895444/attempts/1).\n",
-      "downloadURL": "https://github.com/ozedge9official-beep/GameCase/releases/download/nightly/GameCase.ipa",
-      "localizedDescription": "Run iOS apps without actually installing them!",
-      "iconURL": "https://raw.githubusercontent.com/ozedge9official-beep/GameCase/main/screenshots/AppIcon1024.png",
+      "subtitle": "Import an IPA and its datapack - just play.",
+      "version": "1.0.20",
+      "versionDate": "2026-11-16T21:50:03Z",
+      "downloadURL": "https://github.com/whodaregg/GameCase/releases/download/nightly/GameCase.ipa",
+      "localizedDescription": "GameCase is a sideloading game container built for iOS game ports. Import a game IPA and its romfs datapack into the library, manage each game's own launcher settings in one place, and play - no jailbreak required.",
+      "iconURL": "https://raw.githubusercontent.com/whodaregg/GameCase/main/screenshots/AppIcon1024.png",
       "tintColor": "#0784FC",
       "category": "utilities",
-      "size": 14184552,
-      "screenshotURLs": [
-        "https://raw.githubusercontent.com/LiveContainer/LiveContainer/main/screenshots/1.png"
-      ],
+      "size": 11026888,
+      "screenshotURLs": [],
       "appPermissions": {
         "entitlements": [
           "application-identifier",
@@ -80,17 +77,16 @@
       },
       "versions": [
         {
-          "version": "3.8.11",
-          "date": "2026-11-05T14:10:20Z",
-          "localizedDescription": "Nightly build from [20de6e1](https://github.com/ozedge9official-beep/GameCase/commit/20de6e1): Merge pull request 7 from Tiaoge-tou/docs/remove-loadcontrol-note\n\nThis is a nightly release [created automatically with GitHub Actions workflow](https://github.com/ozedge9official-beep/GameCase/actions/runs/42043895444/attempts/1).\n",
-          "downloadURL": "https://github.com/ozedge9official-beep/GameCase/releases/download/nightly/GameCase.ipa",
-          "size": 14184552,
-          "commit": "20de6e1",
-          "headline": "Merge pull request #7 from Tiaoge-tou/docs/remove-loadcontrol-note"
+          "version": "1.0.20",
+          "date": "2026-11-16T21:50:03Z",
+          "localizedDescription": "Provide Chinese and English notes for all releases (7)\nhttps://github.com/whodaregg/GameCase/actions/runs/43963200492",
+          "downloadURL": "https://github.com/whodaregg/GameCase/releases/download/nightly/GameCase.ipa",
+          "size": 11026888,
+          "commit": "f47ea62",
+          "headline": "Provide Chinese and English notes for all releases (#7)"
         }
       ],
-      "commit": "20de6e1",
-      "headline": "Merge pull request #7 from Tiaoge-tou/docs/remove-loadcontrol-note"
+      "versionDescription": "Provide Chinese and English notes for all releases (7)\nhttps://github.com/whodaregg/GameCase/actions/runs/43963200492"
     }
   ],
   "news": []
