@@ -7,6 +7,14 @@ on:
         description: Previous GitHub username whose repository URLs should be migrated
         required: true
         type: string
+      retire_tag:
+        description: Optional release to withdraw after archiving its source (Git tag is retained)
+        required: false
+        type: string
+      replacement_tag:
+        description: Published latest stable release that will receive the archived source
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -24,4 +32,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PREVIOUS_OWNER: ${{ inputs.previous_owner }}
+          RETIRE_TAG: ${{ inputs.retire_tag }}
+          REPLACEMENT_TAG: ${{ inputs.replacement_tag }}
         run: python3 .github/refresh_release_links.py
