@@ -13,10 +13,12 @@ REPOSITORY = "https://github.com/ozedge9official-beep/GameCase"
 def stage(destination, root=ROOT):
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=True)
+    info = plistlib.loads((root / "LiveContainer/Info.plist").read_bytes())
+    version = info["CFBundleShortVersionString"]
     entries = []
     files = [("GameCase / LiveContainer — GNU AGPL v3", root / "LICENSE"),
              ("第三方归属索引", root / "THIRD_PARTY_NOTICES.md"),
-             ("修改说明", root / "docs/releases/v1.0.20.md"),
+             ("修改说明", root / f"docs/releases/v{version}.md"),
              ("构建与安装说明", root / "docs/BUILDING.md"),
              ("ElleKit — BSD", root / "Resources/Frameworks/CydiaSubstrate.framework/LICENSE")]
     files += [(p.stem, p) for p in sorted((root / "docs/licenses").glob("*.txt"))]
@@ -30,8 +32,6 @@ def stage(destination, root=ROOT):
         name = header + ".txt"
         (destination / name).write_bytes(data[:data.index(b"*/") + 2] + b"\n")
         entries.append({"title": "libarchive — " + header, "file": name})
-    info = plistlib.loads((root / "LiveContainer/Info.plist").read_bytes())
-    version = info["CFBundleShortVersionString"]
     source_manifest = root / "SOURCE-MANIFEST.json"
     if source_manifest.is_file():
         # A published source archive has no .git directory.

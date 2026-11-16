@@ -11,3 +11,6 @@ apps_nightly.json
 verify-nightly/
 __pycache__/
 *.pyc
+
+/GameCase.ipa
+/GameCase-source.tar.gz

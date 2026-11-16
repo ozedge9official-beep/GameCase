@@ -392,6 +392,8 @@ struct LCGameSettingsView: View {
     @State private var filePickerPresented = false
     @State private var cropItem: LCCoverCropItem?
     @State private var coverErrorPresented = false
+    @State private var coverFetchInProgress = false
+    @State private var coverFetchFailed = false
 
     /// 页底：动态色（深色值与原硬编码逐字一致，浅色与 LCNXColor
     /// .background 的浅色变体同值）
@@ -448,11 +450,17 @@ struct LCGameSettingsView: View {
                             .confirmationDialog("封面图", isPresented: $coverMenuPresented, titleVisibility: .visible) {
                                 Button("从相册选择") { photoPickerPresented = true }
                                 Button("从文件选择") { filePickerPresented = true }
-                                Button("联网获取封面") {
-                                    LCCoverFetchService.shared.clearNegativeCache(forBundleIdentifier: app.bundleIdentifier)
-                                    LCCoverFetchService.shared.ensureFetched(appInfo: app.appInfo) {
-                                        self.coverRefresh += 1
+                                if coverResolution.source == .icon {
+                                    Button(coverFetchInProgress ? "正在获取封面…" : "联网获取封面") {
+                                        coverFetchInProgress = true
+                                        LCCoverFetchService.shared.clearNegativeCache(forBundleIdentifier: app.bundleIdentifier)
+                                        LCCoverFetchService.shared.ensureFetched(appInfo: app.appInfo) { success in
+                                            coverFetchInProgress = false
+                                            if success { coverRefresh += 1 }
+                                            else { coverFetchFailed = true }
+                                        }
                                     }
+                                    .disabled(coverFetchInProgress)
                                 }
                                 if coverHasCustom || coverHasFetched {
                                     Button("恢复默认", role: .destructive) { removeCustomCover() }
@@ -484,6 +492,11 @@ struct LCGameSettingsView: View {
                                 Button("好", role: .cancel) {}
                             } message: {
                                 Text("所选内容不是有效的图片，或保存失败，请换一张再试。")
+                            }
+                            .alert("未能获取封面", isPresented: $coverFetchFailed) {
+                                Button("好", role: .cancel) {}
+                            } message: {
+                                Text("请检查网络后重试；商店可能没有对应封面。你也可以从相册或文件选择图片。")
                             }
                         // 存档导入/导出组：存档目录（Documents/save）不存在时
                         // 子视图自隐（判据与依据见 LCSaveDataTransfer.swift 文件头）
@@ -942,6 +955,7 @@ struct LCGameSettingsView: View {
             } label: {
                 navRow(label: "封面图") {
                     coverRowThumbnail
+                    if coverFetchInProgress { ProgressView() }
                     Text(coverResolution.source.displayName)
                         .font(.system(size: 14.5, weight: .semibold))
                         .foregroundColor(LCNXColor.cream)
